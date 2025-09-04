@@ -39,22 +39,59 @@ try {
 // Fetch units with all pricing information
 $units = $pdo->query("SELECT id, unit_name, unit_price, karegar_price, material_price, zakat_percentage FROM unit_prices ORDER BY unit_name")->fetchAll(PDO::FETCH_ASSOC);
 
-// Fetch products for each unit to show usage
+// Fetch products for each unit to show usage (based on actual orders)
 $unitProducts = [];
+$unitOrderStats = []; // New array to store order-based statistics
+
 foreach ($units as $unit) {
+    // Get products that are actually used in orders for this unit
+    // This includes both actual products AND order items with descriptions matching the unit name
     $stmt = $pdo->prepare("
-        SELECT p.id, p.product_name, p.category_id, 
-               COALESCE(AVG(si.sale_price), 0) as sale_price,
-               COALESCE(SUM(si.quantity), 0) as stock_quantity
-        FROM products p 
+        SELECT DISTINCT 
+            COALESCE(p.id, oi.id + 10000) as id, 
+            COALESCE(p.product_name, oi.description) as product_name, 
+            p.category_id, 
+            COALESCE(p.product_unit, ?) as product_unit,
+            COALESCE(AVG(si.sale_price), 0) as sale_price,
+            COALESCE(SUM(si.quantity), 0) as stock_quantity,
+            COUNT(DISTINCT oi.order_id) as order_count,
+            SUM(oi.quantity) as total_ordered_quantity
+        FROM order_items oi
+        LEFT JOIN products p ON oi.product_id = p.id
+        LEFT JOIN orders o ON oi.order_id = o.id
         LEFT JOIN stock_items si ON p.id = si.product_id AND si.status = 'available'
-        WHERE p.product_unit = ? 
-        GROUP BY p.id 
-        ORDER BY p.product_name
+        WHERE (
+            (oi.product_id IS NOT NULL AND p.product_unit = ? AND p.status = 1) OR
+            (oi.product_id IS NULL AND LOWER(oi.description) = LOWER(?))
+        )
+        GROUP BY COALESCE(p.id, oi.id + 10000), COALESCE(p.product_name, oi.description), p.category_id
+        ORDER BY COALESCE(p.product_name, oi.description)
     ");
-    $stmt->execute([$unit['unit_name']]);
+    $stmt->execute([$unit['unit_name'], $unit['unit_name'], $unit['unit_name']]);
     $unitProducts[$unit['unit_name']] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Get comprehensive order statistics for this unit from order_items table
+    // This includes both products with the unit AND order items with descriptions matching the unit name
+    $statsStmt = $pdo->prepare("
+        SELECT 
+            COUNT(DISTINCT CASE WHEN oi.product_id IS NOT NULL THEN oi.product_id ELSE oi.id END) as unique_products_ordered,
+            COUNT(DISTINCT oi.order_id) as total_orders,
+            SUM(oi.quantity) as total_quantity_ordered,
+            SUM(oi.total_price) as total_order_value,
+            AVG(oi.unit_price) as average_unit_price
+        FROM order_items oi
+        INNER JOIN orders o ON oi.order_id = o.id
+        LEFT JOIN products p ON oi.product_id = p.id
+        WHERE (
+            (oi.product_id IS NOT NULL AND p.product_unit = ? AND p.status = 1) OR
+            (oi.product_id IS NULL AND LOWER(oi.description) = LOWER(?))
+        )
+    ");
+    $statsStmt->execute([$unit['unit_name'], $unit['unit_name']]);
+    $unitOrderStats[$unit['unit_name']] = $statsStmt->fetch(PDO::FETCH_ASSOC);
 }
+
+// Unit statistics are now calculated and ready for display
 
 // Get category names for products
 $categoryNames = [];
@@ -101,13 +138,13 @@ include 'includes/header.php';
           <h4 class="card-title">
             <?php
             $totalProducts = 0;
-            foreach ($unitProducts as $products) {
-                $totalProducts += count($products);
+            foreach ($unitOrderStats as $stats) {
+                $totalProducts += (int)($stats['unique_products_ordered'] ?? 0);
             }
             echo $totalProducts;
             ?>
           </h4>
-          <p class="card-text">Total Products</p>
+          <p class="card-text">Products Sold</p>
         </div>
       </div>
     </div>
@@ -117,15 +154,21 @@ include 'includes/header.php';
           <h4 class="card-title">
             <?php
             $totalValue = 0;
-            foreach ($unitProducts as $products) {
-                foreach ($products as $product) {
-                    $totalValue += ($product['sale_price'] * $product['stock_quantity']);
-                }
+            $totalProductsInOrders = 0;
+            $totalOrdersCount = 0;
+            $totalQuantitySold = 0;
+            
+            foreach ($unitOrderStats as $stats) {
+                $totalValue += (float)($stats['total_order_value'] ?? 0);
+                $totalProductsInOrders += (int)($stats['unique_products_ordered'] ?? 0);
+                $totalOrdersCount += (int)($stats['total_orders'] ?? 0);
+                $totalQuantitySold += (int)($stats['total_quantity_ordered'] ?? 0);
             }
             echo 'PKR ' . number_format($totalValue, 2);
             ?>
           </h4>
-          <p class="card-text">Total Stock Value</p>
+          <p class="card-text">Total Sales Value</p>
+          <small class="text-light"><?= $totalQuantitySold ?> units sold</small>
         </div>
       </div>
     </div>
@@ -135,8 +178,8 @@ include 'includes/header.php';
           <h4 class="card-title">
             <?php
             $activeUnits = 0;
-            foreach ($unitProducts as $products) {
-                if (count($products) > 0) {
+            foreach ($unitOrderStats as $stats) {
+                if (($stats['unique_products_ordered'] ?? 0) > 0) {
                     $activeUnits++;
                 }
             }
@@ -144,6 +187,7 @@ include 'includes/header.php';
             ?>
           </h4>
           <p class="card-text">Active Units</p>
+          <small class="text-muted">With sales activity</small>
         </div>
       </div>
     </div>
@@ -199,17 +243,38 @@ include 'includes/header.php';
                  <br><small class="text-muted">After Zakat: PKR <?= number_format($zakatAmount, 2) ?></small>
                </td>
                <td>
-                 <span class="badge bg-primary"><?= count($unitProducts[$row['unit_name']] ?? []) ?></span>
+                 <?php 
+                 $orderStats = $unitOrderStats[$row['unit_name']] ?? [];
+                 $productsInOrders = $orderStats['unique_products_ordered'] ?? 0;
+                 $totalOrders = $orderStats['total_orders'] ?? 0;
+                 $totalQuantity = $orderStats['total_quantity_ordered'] ?? 0;
+                 ?>
+                 <span class="badge bg-primary" title="Products sold in <?= $totalOrders ?> orders (<?= $totalQuantity ?> total units)">
+                   <?= $productsInOrders ?>
+                 </span>
+                 <?php if ($totalOrders > 0): ?>
+                   <br><small class="text-muted"><?= $totalOrders ?> orders</small>
+                 <?php endif; ?>
+                 <?php if ($totalQuantity > 0): ?>
+                   <br><small class="text-muted"><?= $totalQuantity ?> units sold</small>
+                 <?php endif; ?>
                </td>
               <td>
                 <?php
-                $unitValue = 0;
-                $products = $unitProducts[$row['unit_name']] ?? [];
-                foreach ($products as $product) {
-                    $unitValue += ($product['sale_price'] * $product['stock_quantity']);
-                }
+                $orderStats = $unitOrderStats[$row['unit_name']] ?? [];
+                $totalOrderValue = $orderStats['total_order_value'] ?? 0;
+                $totalQuantityOrdered = $orderStats['total_quantity_ordered'] ?? 0;
+                $averageUnitPrice = $orderStats['average_unit_price'] ?? 0;
                 ?>
-                <span class="badge bg-success">PKR <?= number_format($unitValue, 2) ?></span>
+                <span class="badge bg-success" title="Total sales value from <?= $totalQuantityOrdered ?> units sold">
+                  PKR <?= number_format($totalOrderValue, 2) ?>
+                </span>
+                <?php if ($totalQuantityOrdered > 0): ?>
+                  <br><small class="text-muted"><?= $totalQuantityOrdered ?> units sold</small>
+                <?php endif; ?>
+                <?php if ($averageUnitPrice > 0): ?>
+                  <br><small class="text-muted">Avg: PKR <?= number_format($averageUnitPrice, 2) ?>/unit</small>
+                <?php endif; ?>
               </td>
                              <td>
                  <div class="btn-group" role="group">

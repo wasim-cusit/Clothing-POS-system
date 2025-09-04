@@ -15,6 +15,10 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS orders (
   sub_total DECIMAL(10,2) DEFAULT 0.00,
   discount DECIMAL(10,2) DEFAULT 0.00,
   total_amount DECIMAL(10,2) DEFAULT 0.00,
+  karegar_price DECIMAL(10,2) DEFAULT 0.00,
+  material_price DECIMAL(10,2) DEFAULT 0.00,
+  zakat_amount DECIMAL(10,2) DEFAULT 0.00,
+  final_amount DECIMAL(10,2) DEFAULT 0.00,
   paid_amount DECIMAL(10,2) DEFAULT 0.00,
   remaining_amount DECIMAL(10,2) DEFAULT 0.00,
   details TEXT NULL,
@@ -74,6 +78,7 @@ if (isset($_GET['balance_for'])) {
     }
 }
 
+
 // Handle delete order
 
 
@@ -107,15 +112,75 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_order'])) {
 
     $pdo->beginTransaction();
     try {
-        $stmt = $pdo->prepare("INSERT INTO orders (order_no, customer_id, order_date, delivery_date, sub_total, discount, total_amount, paid_amount, remaining_amount, details, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?)");
-        $stmt->execute([$order_no, $customer_id, $order_date, $delivery_date, $sub_total, $discount, $total_amount, $paid_amount, $remaining_amount, $details, $created_by]);
+        // Calculate cost breakdown from order items
+        $total_karegar_price = 0;
+        $total_material_price = 0;
+        $total_zakat_amount = 0;
+        
+        // Calculate cost breakdown from order items
+        $product_ids = $_POST['product_id'] ?? [];
+        $quantities = $_POST['quantity'] ?? [];
+        $unit_prices = $_POST['unit_price'] ?? [];
+        
+        $numRows = max(count($product_ids), count($quantities), count($unit_prices));
+        
+        for ($i = 0; $i < $numRows; $i++) {
+            $pid = (!empty($product_ids[$i] ?? null)) ? (int)$product_ids[$i] : null;
+            $descFromPost = isset($_POST['description'][$i]) ? trim((string)$_POST['description'][$i]) : '';
+            
+            if ($pid === null && $descFromPost === '') continue;
+            
+            $qty = (int)($quantities[$i] ?? 0);
+            $uprice = (float)($unit_prices[$i] ?? 0);
+            
+            if ($qty > 0) {
+                // Get unit prices - either from product or from description
+                if ($pid) {
+                    // Get unit prices from product
+                    $stmt = $pdo->prepare("
+                        SELECT up.karegar_price, up.material_price, up.zakat_percentage 
+                        FROM products p 
+                        LEFT JOIN unit_prices up ON p.product_unit = up.unit_name 
+                        WHERE p.id = ?
+                    ");
+                    $stmt->execute([$pid]);
+                    $unitData = $stmt->fetch(PDO::FETCH_ASSOC);
+                } else {
+                    // Get unit prices directly from unit name in description
+                    $stmt = $pdo->prepare("
+                        SELECT karegar_price, material_price, zakat_percentage 
+                        FROM unit_prices 
+                        WHERE unit_name = ?
+                    ");
+                    $stmt->execute([$descFromPost]);
+                    $unitData = $stmt->fetch(PDO::FETCH_ASSOC);
+                }
+                
+                if ($unitData) {
+                    $karegar_price = (float)($unitData['karegar_price'] ?? 0);
+                    $material_price = (float)($unitData['material_price'] ?? 0);
+                    $zakat_percentage = (float)($unitData['zakat_percentage'] ?? 0);
+                    
+                    // Calculate totals
+                    $total_karegar_price += $qty * $karegar_price;
+                    $total_material_price += $qty * $material_price;
+                    
+                    // Calculate zakat on total cost (unit_price + karegar + material)
+                    $item_total_cost = $qty * ($uprice + $karegar_price + $material_price);
+                    $total_zakat_amount += $item_total_cost * ($zakat_percentage / 100);
+                }
+            }
+        }
+        
+        // Calculate final amount (total_amount - zakat)
+        $final_amount = $total_amount - $total_zakat_amount;
+        
+        $stmt = $pdo->prepare("INSERT INTO orders (order_no, customer_id, order_date, delivery_date, sub_total, discount, total_amount, karegar_price, material_price, zakat_amount, final_amount, paid_amount, remaining_amount, details, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+        $stmt->execute([$order_no, $customer_id, $order_date, $delivery_date, $sub_total, $discount, $total_amount, $total_karegar_price, $total_material_price, $total_zakat_amount, $final_amount, $paid_amount, $remaining_amount, $details, $created_by]);
         $order_id = (int)$pdo->lastInsertId();
 
         // Items arrays
-        $product_ids = $_POST['product_id'] ?? [];
         $descriptions = $_POST['description'] ?? [];
-        $quantities = $_POST['quantity'] ?? [];
-        $unit_prices = $_POST['unit_price'] ?? [];
         $total_prices = $_POST['total_price'] ?? [];
 
         $numRows = max(
@@ -159,7 +224,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_order'])) {
 $customers = $pdo->query("SELECT id, name FROM customer ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
 $products = $pdo->query("SELECT id, product_name as name, product_unit as unit FROM products WHERE status = 1 ORDER BY product_name")->fetchAll(PDO::FETCH_ASSOC);
 try {
-    $units = $pdo->query("SELECT unit_name, unit_price FROM unit_prices ORDER BY unit_name")->fetchAll(PDO::FETCH_ASSOC);
+    $units = $pdo->query("SELECT unit_name, unit_price, karegar_price, material_price, zakat_percentage FROM unit_prices ORDER BY unit_name")->fetchAll(PDO::FETCH_ASSOC);
 } catch (Throwable $e) {
     $units = [];
 }
@@ -245,7 +310,10 @@ include 'includes/header.php';
                     <select name="description[]" class="form-control form-control-sm unit-select" aria-label="Unit">
                       <option value="">Select Unit</option>
                       <?php foreach ($units as $u): ?>
-                        <option value="<?= htmlspecialchars($u['unit_name']) ?>" data-price="<?= number_format((float)$u['unit_price'], 2, '.', '') ?>"><?= htmlspecialchars($u['unit_name']) ?></option>
+                        <option value="<?= htmlspecialchars($u['unit_name']) ?>" 
+                                data-price="<?= number_format((float)$u['unit_price'], 2, '.', '') ?>">
+                          <?= htmlspecialchars($u['unit_name']) ?>
+                        </option>
                       <?php endforeach; ?>
                     </select>
                     <a href="add_unit.php" target="_blank" class="btn btn-outline-secondary" title="Add Unit"><i class="bi bi-plus"></i></a>
@@ -293,6 +361,8 @@ include 'includes/header.php';
                 <label class="form-label">Remaining</label>
                 <input type="number" step="0.01" name="remaining" id="remaining" class="form-control" readonly>
               </div>
+            </div>
+
               <div class="col-12 col-md-9">
                 <label class="form-label">Order Details</label>
                 <textarea name="details" class="form-control" rows="2" placeholder="Order Details (e.g., measurements, notes)"></textarea>
@@ -396,10 +466,12 @@ document.addEventListener('input', function(e) {
 
 function recalcTotals() {
   let sub = 0;
+  
   document.querySelectorAll('.total-price').forEach(el => {
     const v = parseFloat(el.value || 0);
     sub += v;
   });
+  
   const discount = parseFloat(document.getElementById('discount').value || 0);
   const paid = parseFloat(document.getElementById('paid').value || 0);
 
@@ -410,6 +482,7 @@ function recalcTotals() {
   document.getElementById('grandTotal').value = total.toFixed(2);
   document.getElementById('remaining').value = remaining.toFixed(2);
 }
+
 
 // Initialize totals on load
 document.addEventListener('DOMContentLoaded', recalcTotals);

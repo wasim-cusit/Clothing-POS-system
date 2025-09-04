@@ -5,6 +5,16 @@ require_once 'includes/config.php';
 
 $activePage = 'order';
 
+// Ensure orders table has cost breakdown columns
+try {
+    $pdo->exec("ALTER TABLE orders ADD COLUMN IF NOT EXISTS karegar_price DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER total_amount");
+    $pdo->exec("ALTER TABLE orders ADD COLUMN IF NOT EXISTS material_price DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER karegar_price");
+    $pdo->exec("ALTER TABLE orders ADD COLUMN IF NOT EXISTS zakat_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER material_price");
+    $pdo->exec("ALTER TABLE orders ADD COLUMN IF NOT EXISTS final_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER zakat_amount");
+} catch (Exception $e) {
+    // Columns might already exist, ignore error
+}
+
 // Handle delete order
 if (isset($_GET['delete'])) {
   $deleteId = (int)$_GET['delete'];
@@ -44,9 +54,17 @@ if (isset($_GET['update_status'])) {
   }
 }
 
-// Fetch all orders with error handling
+// Fetch all orders with cost breakdown
 try {
-    $orders = $pdo->query("SELECT o.*, c.name AS customer_name, c.mobile AS customer_mobile FROM orders o LEFT JOIN customer c ON o.customer_id = c.id ORDER BY o.id DESC")->fetchAll(PDO::FETCH_ASSOC);
+    $orders = $pdo->query("
+        SELECT 
+            o.*, 
+            c.name AS customer_name, 
+            c.mobile AS customer_mobile
+        FROM orders o 
+        LEFT JOIN customer c ON o.customer_id = c.id 
+        ORDER BY o.id DESC
+    ")->fetchAll(PDO::FETCH_ASSOC);
     error_log("Orders query returned " . count($orders) . " orders");
 } catch (Exception $e) {
     error_log("Error fetching orders: " . $e->getMessage());
@@ -167,6 +185,133 @@ include 'includes/header.php';
         </div>
       </div>
     </div>
+    
+    <!-- Cost Summary Table -->
+    <div class="card-body border-bottom">
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <h6 class="mb-2"><i class="bi bi-list-ul me-2"></i>Order Cost Summary</h6>
+        </div>
+        <div class="col-md-6 text-end">
+          <div class="btn-group" role="group">
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="exportToExcel('daily')">
+              <i class="bi bi-calendar-day me-1"></i>Daily
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="exportToExcel('weekly')">
+              <i class="bi bi-calendar-week me-1"></i>Weekly
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="exportToExcel('monthly')">
+              <i class="bi bi-calendar-month me-1"></i>Monthly
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-success" onclick="exportToExcel('custom')">
+              <i class="bi bi-calendar-range me-1"></i>Custom Range
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Date Range Filter -->
+      <div class="row mb-3">
+        <div class="col-md-12">
+          <div class="card bg-light">
+            <div class="card-body py-2">
+              <div class="row align-items-center">
+                <div class="col-md-2">
+                  <label class="form-label mb-1"><i class="bi bi-calendar-event me-1"></i>Filter by Date Range:</label>
+                </div>
+                <div class="col-md-3">
+                  <input type="date" id="fromDate" class="form-control form-control-sm" placeholder="From Date">
+                </div>
+                <div class="col-md-3">
+                  <input type="date" id="toDate" class="form-control form-control-sm" placeholder="To Date">
+                </div>
+                <div class="col-md-2">
+                  <button type="button" class="btn btn-sm btn-primary" onclick="filterByDateRange()">
+                    <i class="bi bi-funnel me-1"></i>Filter
+                  </button>
+                </div>
+                <div class="col-md-2">
+                  <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearDateFilter()">
+                    <i class="bi bi-x-circle me-1"></i>Clear
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="table-responsive">
+        <table class="table table-sm table-bordered mb-0 cost-summary-table">
+          <thead class="table-light">
+            <tr>
+              <th class="text-nowrap">Order No</th>
+              <th class="text-nowrap">Customer</th>
+              <th class="text-nowrap">Order Date</th>
+              <th class="text-nowrap">Total Amount</th>
+              <th class="text-nowrap">Karegar Price</th>
+              <th class="text-nowrap">Material Price</th>
+              <th class="text-nowrap">Zakat</th>
+              <th class="text-nowrap">Final Amount</th>
+            </tr>
+          </thead>
+          <tbody id="costSummaryBody">
+            <?php if (empty($orders)): ?>
+              <tr>
+                <td colspan="8" class="text-center py-3 text-muted">
+                  <i class="bi bi-info-circle me-2"></i>No orders found
+                </td>
+              </tr>
+            <?php else: ?>
+              <?php 
+              $grand_total_karegar = 0;
+              $grand_total_material = 0;
+              $grand_total_zakat = 0;
+              $grand_total_cost = 0;
+              ?>
+              <?php foreach ($orders as $order): ?>
+                <?php 
+                $karegar_price = floatval($order['karegar_price'] ?? 0);
+                $material_price = floatval($order['material_price'] ?? 0);
+                $zakat = floatval($order['zakat_amount'] ?? 0);
+                $final_amount = floatval($order['final_amount'] ?? 0);
+                $total_amount = floatval($order['total_amount'] ?? 0);
+                
+                $grand_total_karegar += $karegar_price;
+                $grand_total_material += $material_price;
+                $grand_total_zakat += $zakat;
+                $grand_total_cost += $final_amount;
+                ?>
+                <tr class="order-summary-row" data-order-date="<?= htmlspecialchars($order['order_date']) ?>">
+                  <td class="text-nowrap">
+                    <strong><?= htmlspecialchars($order['order_no'] ?? 'ORD-' . date('Y') . '-' . str_pad($order['id'], 4, '0', STR_PAD_LEFT)) ?></strong>
+                  </td>
+                  <td class="text-nowrap">
+                    <?= htmlspecialchars($order['customer_name'] ?? 'Walk-in Customer') ?>
+                  </td>
+                  <td class="text-nowrap"><?= htmlspecialchars($order['order_date']) ?></td>
+                  <td class="text-nowrap text-end">Rs. <?= number_format($total_amount, 2) ?></td>
+                  <td class="text-nowrap text-end">Rs. <?= number_format($karegar_price, 2) ?></td>
+                  <td class="text-nowrap text-end">Rs. <?= number_format($material_price, 2) ?></td>
+                  <td class="text-nowrap text-end">Rs. <?= number_format($zakat, 2) ?></td>
+                  <td class="text-nowrap text-end fw-bold">Rs. <?= number_format($final_amount, 2) ?></td>
+                </tr>
+              <?php endforeach; ?>
+              <!-- Grand Total Row -->
+              <tr class="table-success" id="grandTotalRow">
+                <td colspan="3" class="text-end fw-bold">GRAND TOTAL:</td>
+                <td class="text-end fw-bold">Rs. <?= number_format(array_sum(array_column($orders, 'total_amount')), 2) ?></td>
+                <td class="text-end fw-bold">Rs. <?= number_format($grand_total_karegar, 2) ?></td>
+                <td class="text-end fw-bold">Rs. <?= number_format($grand_total_material, 2) ?></td>
+                <td class="text-end fw-bold">Rs. <?= number_format($grand_total_zakat, 2) ?></td>
+                <td class="text-end fw-bold">Rs. <?= number_format($grand_total_cost, 2) ?></td>
+              </tr>
+            <?php endif; ?>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
     <div class="card-body p-0">
       <div class="table-responsive">
         <table class="table table-bordered table-striped mb-0">
@@ -803,6 +948,191 @@ function showErrorAlert(message) {
         Promise.resolve().then(initializePhoneValidation);
     }
 })();
+
+// Date Range Filtering Functions
+function filterByDateRange() {
+    const fromDate = document.getElementById('fromDate').value;
+    const toDate = document.getElementById('toDate').value;
+    
+    if (!fromDate || !toDate) {
+        alert('Please select both From Date and To Date');
+        return;
+    }
+    
+    const rows = document.querySelectorAll('.order-summary-row');
+    let visibleCount = 0;
+    let totalKaregar = 0;
+    let totalMaterial = 0;
+    let totalZakat = 0;
+    let totalFinal = 0;
+    let totalAmount = 0;
+    
+    rows.forEach(row => {
+        const orderDate = row.getAttribute('data-order-date');
+        const isInRange = orderDate >= fromDate && orderDate <= toDate;
+        
+        if (isInRange) {
+            row.style.display = '';
+            visibleCount++;
+            
+            // Calculate totals for visible rows
+            const cells = row.querySelectorAll('td');
+            if (cells.length >= 8) {
+                totalAmount += parseFloat(cells[3].textContent.replace('Rs. ', '').replace(',', ''));
+                totalKaregar += parseFloat(cells[4].textContent.replace('Rs. ', '').replace(',', ''));
+                totalMaterial += parseFloat(cells[5].textContent.replace('Rs. ', '').replace(',', ''));
+                totalZakat += parseFloat(cells[6].textContent.replace('Rs. ', '').replace(',', ''));
+                totalFinal += parseFloat(cells[7].textContent.replace('Rs. ', '').replace(',', ''));
+            }
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    // Update grand total row
+    updateGrandTotalRow(totalAmount, totalKaregar, totalMaterial, totalZakat, totalFinal);
+    
+    // Show filter result
+    if (visibleCount === 0) {
+        alert('No orders found in the selected date range');
+    } else {
+        alert(`Found ${visibleCount} orders in the selected date range`);
+    }
+}
+
+function clearDateFilter() {
+    document.getElementById('fromDate').value = '';
+    document.getElementById('toDate').value = '';
+    
+    // Show all rows
+    const rows = document.querySelectorAll('.order-summary-row');
+    rows.forEach(row => {
+        row.style.display = '';
+    });
+    
+    // Reset grand total to original values
+    location.reload(); // Simple way to reset totals
+}
+
+function updateGrandTotalRow(totalAmount, totalKaregar, totalMaterial, totalZakat, totalFinal) {
+    const grandTotalRow = document.getElementById('grandTotalRow');
+    if (grandTotalRow) {
+        const cells = grandTotalRow.querySelectorAll('td');
+        if (cells.length >= 8) {
+            cells[3].textContent = 'Rs. ' + totalAmount.toFixed(2);
+            cells[4].textContent = 'Rs. ' + totalKaregar.toFixed(2);
+            cells[5].textContent = 'Rs. ' + totalMaterial.toFixed(2);
+            cells[6].textContent = 'Rs. ' + totalZakat.toFixed(2);
+            cells[7].textContent = 'Rs. ' + totalFinal.toFixed(2);
+        }
+    }
+}
+
+// Excel Export Functionality
+function exportToExcel(period) {
+    const table = document.getElementById('costSummaryBody');
+    const rows = table.querySelectorAll('tr:not([style*="display: none"])');
+    
+    if (rows.length === 0) {
+        alert('No data to export');
+        return;
+    }
+    
+    let csvContent = '';
+    
+    // Add headers
+    csvContent += 'Order No,Customer,Order Date,Total Amount,Karegar Price,Material Price,Zakat,Final Amount\n';
+    
+    // Add data rows (skip the grand total row for individual exports)
+    for (let i = 0; i < rows.length - 1; i++) {
+        const row = rows[i];
+        const cells = row.querySelectorAll('td');
+        
+        if (cells.length >= 8) {
+            const orderNo = cells[0].textContent.trim();
+            const customer = cells[1].textContent.trim();
+            const orderDate = cells[2].textContent.trim();
+            const totalAmount = cells[3].textContent.replace('Rs. ', '').replace(',', '');
+            const karegarPrice = cells[4].textContent.replace('Rs. ', '').replace(',', '');
+            const materialPrice = cells[5].textContent.replace('Rs. ', '').replace(',', '');
+            const zakat = cells[6].textContent.replace('Rs. ', '').replace(',', '');
+            const finalAmount = cells[7].textContent.replace('Rs. ', '').replace(',', '');
+            
+            csvContent += `"${orderNo}","${customer}","${orderDate}","${totalAmount}","${karegarPrice}","${materialPrice}","${zakat}","${finalAmount}"\n`;
+        }
+    }
+    
+    // Add grand total row
+    const grandTotalRow = rows[rows.length - 1];
+    if (grandTotalRow && grandTotalRow.classList.contains('table-success')) {
+        const cells = grandTotalRow.querySelectorAll('td');
+        if (cells.length >= 8) {
+            const totalAmountTotal = cells[3].textContent.replace('Rs. ', '').replace(',', '');
+            const karegarTotal = cells[4].textContent.replace('Rs. ', '').replace(',', '');
+            const materialTotal = cells[5].textContent.replace('Rs. ', '').replace(',', '');
+            const zakatTotal = cells[6].textContent.replace('Rs. ', '').replace(',', '');
+            const finalAmountTotal = cells[7].textContent.replace('Rs. ', '').replace(',', '');
+            
+            csvContent += `"GRAND TOTAL","","","${totalAmountTotal}","${karegarTotal}","${materialTotal}","${zakatTotal}","${finalAmountTotal}"\n`;
+        }
+    }
+    
+    // Create filename based on period
+    const now = new Date();
+    let filename = '';
+    
+    switch(period) {
+        case 'daily':
+            filename = `Order_Cost_Summary_Daily_${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}.csv`;
+            break;
+        case 'weekly':
+            const weekStart = new Date(now.setDate(now.getDate() - now.getDay()));
+            filename = `Order_Cost_Summary_Weekly_${weekStart.getFullYear()}-${String(weekStart.getMonth() + 1).padStart(2, '0')}-${String(weekStart.getDate()).padStart(2, '0')}.csv`;
+            break;
+        case 'monthly':
+            filename = `Order_Cost_Summary_Monthly_${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}.csv`;
+            break;
+        case 'custom':
+            const fromDate = document.getElementById('fromDate').value;
+            const toDate = document.getElementById('toDate').value;
+            if (fromDate && toDate) {
+                filename = `Order_Cost_Summary_${fromDate}_to_${toDate}.csv`;
+            } else {
+                filename = `Order_Cost_Summary_Custom_${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}.csv`;
+            }
+            break;
+        default:
+            filename = `Order_Cost_Summary_${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}.csv`;
+    }
+    
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Show success message
+    const button = event.target.closest('button');
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="bi bi-check-circle me-1"></i>Exported!';
+    button.classList.remove('btn-outline-primary', 'btn-outline-success');
+    button.classList.add('btn-success');
+    
+    setTimeout(() => {
+        button.innerHTML = originalText;
+        button.classList.remove('btn-success');
+        if (button.textContent.includes('Custom Range')) {
+            button.classList.add('btn-outline-success');
+        } else {
+            button.classList.add('btn-outline-primary');
+        }
+    }, 2000);
+}
 </script>
 
 <?php include 'includes/footer.php'; ?>
@@ -1164,6 +1494,56 @@ function showErrorAlert(message) {
         max-width: 160px;
         vertical-align: top;
     }
+}
+
+/* Cost Summary Table Styling */
+.cost-summary-table {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.cost-summary-table .table {
+    margin-bottom: 0;
+}
+
+.cost-summary-table .table th {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    color: white;
+    font-weight: 600;
+    border: none;
+    padding: 0.75rem 0.5rem;
+}
+
+.cost-summary-table .table td {
+    padding: 0.5rem;
+    border-color: #dee2e6;
+    vertical-align: middle;
+}
+
+.cost-summary-table .table-success {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    font-weight: 600;
+}
+
+.cost-summary-table .table-success td {
+    border-color: #c3e6cb;
+}
+
+/* Export buttons styling */
+.btn-group .btn {
+    border-radius: 0.375rem;
+    margin-left: 0.25rem;
+}
+
+.btn-group .btn:first-child {
+    margin-left: 0;
+}
+
+.btn-group .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 /* Search and Filter Styling */
