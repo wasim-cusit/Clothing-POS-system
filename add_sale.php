@@ -134,8 +134,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_sale'])) {
             $pdo->beginTransaction();
 
             $after_discount = $subtotal - $discount;
-            $stmt = $pdo->prepare("INSERT INTO sale (customer_id, walk_in_cust_name, sale_no, sale_date, subtotal, discount, after_discount, total_amount, paid_amount, due_amount, payment_method_id, notes, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$customer_id, $walk_in_cust_name, $invoice_no, $sale_date, $subtotal, $discount, $after_discount, $total_amount, $paid_amount, $due_amount, $payment_method_id, $notes, $created_by]);
+            $stmt = $pdo->prepare("INSERT INTO sale (customer_id, walk_in_cust_name, reference_persons, sale_no, sale_date, subtotal, discount, after_discount, total_amount, paid_amount, due_amount, payment_method_id, notes, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$customer_id, $walk_in_cust_name, $_POST['reference_persons'] ?? '', $invoice_no, $sale_date, $subtotal, $discount, $after_discount, $total_amount, $paid_amount, $due_amount, $payment_method_id, $notes, $created_by]);
             $sale_id = $pdo->lastInsertId();
 
             // Handle sale items
@@ -282,7 +282,7 @@ include 'includes/header.php';
                                     <i class="bi bi-person-circle"></i> Customer Information
                                 </h6>
                             </div>
-                            <div class="col-md-3 mb-3">
+                            <div class="col-lg-3 col-md-6 col-sm-12 mb-3">
                                 <label class="form-label fw-bold">Customer <span class="text-danger">*</span></label>
                                 <div class="customer-dropdown-container">
                                     <button type="button" class="customer-dropdown-btn" id="customerDropdownBtn">
@@ -306,18 +306,23 @@ include 'includes/header.php';
                                     <input type="hidden" name="customer_id" id="customerSelect" required>
                                 </div>
                             </div>
-                            <div class="mb-3" id="walkInCustomerField" style="display: none; width: 18%;">
+                            <div class="col-lg-3 col-md-6 col-sm-12 mb-3" id="walkInCustomerField" style="display: none;">
                                 <label class="form-label fw-bold">Walk-in Customer Name <span class="text-danger">*</span></label>
                                 <input type="text" name="walk_in_cust_name" class="form-control" placeholder="Enter customer name" required>
                             </div>
-                            <div class="mb-3" style="width: 14%;">
+                            <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
                                 <label class="form-label fw-bold">Sale Date <span class="text-danger">*</span></label>
                                 <input type="date" name="sale_date" class="form-control" required value="<?= date('Y-m-d') ?>">
                             </div>
-
-                            <div class="col-md-3 mb-3" style="margin-top: 30px;">
-                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
-                                    <i class="bi bi-person-plus"></i> Add New Customer
+                            <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                                <label class="form-label fw-bold">Reference Persons</label>
+                                <input type="text" name="reference_persons" class="form-control" placeholder="Who referred this customer?">
+                            </div>
+                            <div class="col-lg-2 col-md-12 col-sm-12 mb-3 d-flex align-items-end">
+                                <button type="button" class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
+                                    <i class="bi bi-person-plus"></i> 
+                                    <span class="d-none d-md-inline">Add New Customer</span>
+                                    <span class="d-md-none">Add Customer</span>
                                 </button>
                             </div>
                         </div>
@@ -1089,6 +1094,123 @@ include 'includes/header.php';
             })
             .catch(() => showNotification('Failed to add customer.', 'error'));
     });
+
+    // Mobile-specific enhancements
+    function enhanceMobileExperience() {
+        // Prevent zoom on input focus for iOS
+        if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+            const inputs = document.querySelectorAll('input, select, textarea');
+            inputs.forEach(input => {
+                input.addEventListener('focus', function() {
+                    this.style.fontSize = '16px';
+                });
+                
+                input.addEventListener('blur', function() {
+                    this.style.fontSize = '';
+                });
+            });
+        }
+        
+        // Mobile-optimized customer dropdown
+        if (window.innerWidth <= 767.98) {
+            const customerDropdown = document.getElementById('customerDropdownList');
+            if (customerDropdown) {
+                customerDropdown.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('customer-option')) {
+                        // Close dropdown after selection on mobile
+                        setTimeout(() => {
+                            this.classList.remove('show');
+                        }, 100);
+                    }
+                });
+            }
+        }
+        
+        // Mobile-optimized form validation
+        const form = document.getElementById('saleForm');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                if (window.innerWidth <= 767.98) {
+                    // Show mobile-friendly validation messages
+                    const invalidFields = form.querySelectorAll('.form-control:invalid, .form-select:invalid');
+                    if (invalidFields.length > 0) {
+                        e.preventDefault();
+                        invalidFields[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        showNotification('Please fill in all required fields correctly', 'error');
+                    }
+                }
+            });
+        }
+        
+        // Mobile-optimized button interactions
+        const buttons = document.querySelectorAll('.btn');
+        buttons.forEach(button => {
+            button.addEventListener('touchstart', function() {
+                this.style.transform = 'scale(0.95)';
+            }, { passive: true });
+            
+            button.addEventListener('touchend', function() {
+                this.style.transform = 'scale(1)';
+            }, { passive: true });
+        });
+        
+        // Mobile-optimized form field interactions
+        const formFields = document.querySelectorAll('.form-control, .form-select');
+        formFields.forEach(field => {
+            field.addEventListener('focus', function() {
+                if (window.innerWidth <= 767.98) {
+                    // Add mobile-specific focus styles
+                    this.style.borderWidth = '2px';
+                    this.style.boxShadow = '0 0 0 0.2rem rgba(0, 123, 255, 0.25)';
+                }
+            });
+            
+            field.addEventListener('blur', function() {
+                if (window.innerWidth <= 767.98) {
+                    // Remove mobile-specific focus styles
+                    this.style.borderWidth = '';
+                    this.style.boxShadow = '';
+                }
+            });
+        });
+    }
+
+    // Initialize mobile enhancements
+    document.addEventListener('DOMContentLoaded', function() {
+        enhanceMobileExperience();
+    });
+
+    // Handle mobile orientation changes
+    window.addEventListener('orientationchange', function() {
+        setTimeout(() => {
+            // Recalculate layouts after orientation change
+            if (window.innerWidth <= 767.98) {
+                enhanceMobileExperience();
+            }
+        }, 100);
+    });
+
+    // Mobile performance optimizations
+    if (window.innerWidth <= 767.98) {
+        // Debounce resize events for mobile
+        let resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                // Recalculate mobile layouts
+                enhanceMobileExperience();
+            }, 150);
+        }, { passive: true });
+        
+        // Optimize scroll performance on mobile
+        let scrollTimeout;
+        window.addEventListener('scroll', function() {
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                // Handle scroll events efficiently
+            }, 16); // 60fps
+        }, { passive: true });
+    }
 </script>
 
 <?php include 'includes/footer.php'; ?>
@@ -1414,5 +1536,587 @@ include 'includes/header.php';
 
     .customer-option.hidden {
         display: none;
+    }
+
+    /* Mobile Responsiveness */
+    @media (max-width: 1199.98px) {
+        .sale-item-row {
+            flex-wrap: wrap;
+        }
+        
+        .sale-item-row > div {
+            margin-bottom: 1rem;
+        }
+        
+        .customer-dropdown-list {
+            max-height: 250px;
+        }
+    }
+
+    @media (max-width: 991.98px) {
+        .container-fluid {
+            padding-left: 15px;
+            padding-right: 15px;
+        }
+        
+        .main-content {
+            padding: 15px;
+        }
+        
+        /* Stack form sections vertically on tablets */
+        .row.mb-4 > div {
+            margin-bottom: 1rem;
+        }
+        
+        /* Adjust button sizes for tablets */
+        .btn-lg {
+            padding: 10px 20px;
+            font-size: 1rem;
+        }
+        
+        /* Customer section tablet layout */
+        .col-md-3, .col-md-2 {
+            margin-bottom: 1rem;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .container-fluid {
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+        
+        .main-content {
+            padding: 10px;
+            margin-top: 20px;
+        }
+        
+        /* Mobile-optimized header */
+        .d-flex.justify-content-between.align-items-center {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+        
+        .d-flex.justify-content-between.align-items-center h2 {
+            font-size: 1.5rem;
+            margin-bottom: 0;
+        }
+        
+        /* Mobile form layout */
+        .sale-item-row {
+            flex-direction: column;
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border: 1px solid #dee2e6;
+        }
+        
+        .sale-item-row > div {
+            width: 100% !important;
+            margin-bottom: 1rem;
+        }
+        
+        /* Mobile-optimized customer section */
+        .customer-dropdown-container {
+            margin-bottom: 1rem;
+        }
+        
+        #walkInCustomerField {
+            width: 100% !important;
+            margin-bottom: 1rem;
+        }
+        
+        /* Mobile-optimized sale items */
+        .sale-item-row .col-md-1,
+        .sale-item-row .col-md-2,
+        .sale-item-row .col-md-3 {
+            margin-bottom: 1rem;
+        }
+        
+        /* Mobile button layout */
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+        
+        .btn-group .btn {
+            margin-bottom: 0.5rem;
+            margin-right: 0;
+            width: 100%;
+        }
+        
+        /* Mobile form controls */
+        .form-control, .form-select {
+            font-size: 16px; /* Prevents zoom on iOS */
+            padding: 0.75rem;
+            border-radius: 8px;
+        }
+        
+        .form-label {
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Mobile table improvements */
+        .table-responsive {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        /* Mobile card improvements */
+        .card {
+            margin-bottom: 1rem;
+            border-radius: 12px;
+        }
+        
+        .card-header {
+            padding: 1rem;
+        }
+        
+        .card-body {
+            padding: 1rem;
+        }
+        
+        /* Mobile modal improvements */
+        .modal-dialog {
+            margin: 1rem;
+            max-width: calc(100% - 2rem);
+        }
+        
+        .modal-body {
+            padding: 1rem;
+        }
+        
+        /* Mobile input groups */
+        .input-group-text {
+            font-size: 0.9rem;
+            padding: 0.75rem;
+        }
+        
+        /* Mobile submit buttons */
+        .row:last-child .col-12 {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .row:last-child .btn {
+            width: 100%;
+            margin: 0;
+        }
+        
+        /* Mobile action buttons in sale items */
+        .sale-item-row .col-md-1 {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+        
+        .sale-item-row .btn {
+            flex: 1;
+            max-width: 120px;
+        }
+        
+        /* Mobile form sections */
+        .row.mb-4 {
+            background: #fff;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+        }
+        
+        .text-primary.border-bottom.pb-2.mb-3 {
+            border-bottom: 2px solid #007bff !important;
+            margin-bottom: 1rem !important;
+        }
+        
+        /* Mobile customer dropdown */
+        .customer-dropdown-list {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 350px;
+            max-height: 60vh;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .customer-dropdown-list::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: -1;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .container-fluid {
+            padding-left: 5px;
+            padding-right: 5px;
+        }
+        
+        .main-content {
+            padding: 5px;
+        }
+        
+        /* Ultra-small mobile optimization */
+        .d-flex.justify-content-between.align-items-center h2 {
+            font-size: 1.25rem;
+        }
+        
+        /* Mobile form spacing */
+        .row.mb-4 {
+            margin-bottom: 1.5rem !important;
+        }
+        
+        .mb-3 {
+            margin-bottom: 1rem !important;
+        }
+        
+        /* Mobile form controls */
+        .form-control, .form-select {
+            padding: 0.6rem;
+            font-size: 0.9rem;
+        }
+        
+        .form-label {
+            font-size: 0.85rem;
+        }
+        
+        /* Mobile button improvements */
+        .btn {
+            padding: 0.6rem 1rem;
+            font-size: 0.9rem;
+            border-radius: 8px;
+        }
+        
+        .btn-lg {
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+        }
+        
+        /* Mobile customer dropdown */
+        .customer-dropdown-btn {
+            padding: 0.6rem;
+            font-size: 0.9rem;
+        }
+        
+        .customer-option {
+            padding: 0.6rem;
+            font-size: 0.9rem;
+        }
+        
+        /* Mobile alert improvements */
+        .alert {
+            padding: 0.75rem;
+            font-size: 0.9rem;
+            border-radius: 8px;
+        }
+        
+        /* Mobile section headers */
+        .text-primary.border-bottom.pb-2.mb-3 {
+            font-size: 1rem;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        /* Mobile sale items */
+        .sale-item-row {
+            padding: 0.75rem;
+        }
+        
+        .row.mb-4 {
+            padding: 0.75rem;
+        }
+        
+        /* Mobile action buttons */
+        .sale-item-row .btn {
+            padding: 0.5rem;
+            font-size: 0.8rem;
+        }
+    }
+
+    /* Touch-friendly interactions */
+    @media (hover: none) and (pointer: coarse) {
+        .btn:hover {
+            transform: none;
+        }
+        
+        .btn:active {
+            transform: scale(0.95);
+        }
+        
+        .customer-option:hover {
+            background-color: transparent;
+        }
+        
+        .customer-option:active {
+            background-color: #f8f9fa;
+        }
+        
+        .form-control:focus,
+        .form-select:focus {
+            transform: scale(1.02);
+        }
+    }
+
+    /* Landscape mobile optimization */
+    @media (max-width: 767.98px) and (orientation: landscape) {
+        .main-content {
+            padding: 0.5rem;
+        }
+        
+        .sale-item-row > div {
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-control, .form-select {
+            padding: 0.5rem;
+        }
+        
+        .sale-item-row {
+            padding: 0.75rem;
+        }
+    }
+
+    /* Mobile-first responsive utilities */
+    .d-mobile-none {
+        display: none !important;
+    }
+    
+    .d-mobile-block {
+        display: block !important;
+    }
+    
+    @media (min-width: 768px) {
+        .d-mobile-none {
+            display: initial !important;
+        }
+        
+        .d-mobile-block {
+            display: initial !important;
+        }
+    }
+
+    /* Mobile form validation improvements */
+    @media (max-width: 767.98px) {
+        .form-control.is-invalid,
+        .form-control.is-valid,
+        .form-control.is-warning {
+            border-width: 2px;
+        }
+        
+        .invalid-feedback,
+        .valid-feedback {
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+        }
+    }
+
+    /* Mobile-specific improvements for add sale form */
+    @media (max-width: 767.98px) {
+        /* Customer information mobile layout */
+        .row.mb-4:has(.text-primary:contains("Customer Information")) {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+        
+        /* Sale items mobile layout */
+        .row.mb-4:has(.text-primary:contains("Sale Items")) {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+        
+        /* Pricing summary mobile layout */
+        .row.mb-4:has(.text-primary:contains("Pricing Summary")) {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+        
+        /* Payment information mobile layout */
+        .row.mb-4:has(.text-primary:contains("Payment Information")) {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+        
+        /* Mobile form field improvements */
+        .form-control, .form-select, textarea {
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Mobile button improvements */
+        .btn-outline-primary {
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Mobile input group improvements */
+        .input-group {
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Mobile textarea improvements */
+        textarea.form-control {
+            min-height: 80px;
+        }
+        
+        /* Mobile color select improvements */
+        .color-select {
+            margin-bottom: 0.5rem;
+        }
+        
+        .custom-color-input {
+            margin-top: 0.5rem;
+        }
+    }
+
+    /* Performance optimizations for mobile */
+    @media (max-width: 767.98px) {
+        .sale-item-row {
+            will-change: transform;
+            backface-visibility: hidden;
+            transform: translateZ(0);
+        }
+        
+        .form-control, .form-select {
+            will-change: transform;
+            backface-visibility: hidden;
+        }
+        
+        .btn {
+            will-change: transform;
+            backface-visibility: hidden;
+        }
+        
+        /* Customer information performance optimizations */
+        .customer-dropdown-container {
+            will-change: transform;
+            backface-visibility: hidden;
+        }
+        
+        .customer-dropdown-btn {
+            will-change: transform;
+            backface-visibility: hidden;
+        }
+        
+        #walkInCustomerField {
+            will-change: transform;
+            backface-visibility: hidden;
+        }
+    }
+
+    /* Additional mobile enhancements for customer information */
+    @media (max-width: 767.98px) {
+        /* Touch-friendly customer dropdown */
+        .customer-dropdown-btn {
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* Mobile customer search optimization */
+        .customer-search-box input {
+            font-size: 16px; /* Prevents zoom on iOS */
+            padding: 0.75rem;
+            border-radius: 8px;
+            border: 2px solid #ced4da;
+        }
+        
+        .customer-search-box input:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        
+        /* Mobile customer options */
+        .customer-option {
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            border-bottom: 1px solid #f8f9fa;
+            transition: all 0.2s ease;
+        }
+        
+        .customer-option:active {
+            background-color: #007bff;
+            color: #fff;
+            transform: scale(0.98);
+        }
+        
+        /* Mobile form field animations */
+        .row.mb-4:has(.text-primary:contains("Customer Information")) .form-control,
+        .row.mb-4:has(.text-primary:contains("Customer Information")) .form-select {
+            transition: all 0.2s ease;
+        }
+        
+        .row.mb-4:has(.text-primary:contains("Customer Information")) .form-control:focus,
+        .row.mb-4:has(.text-primary:contains("Customer Information")) .form-select:focus {
+            transform: scale(1.02);
+        }
+        
+        /* Mobile button animations */
+        .row.mb-4:has(.text-primary:contains("Customer Information")) .btn {
+            transition: all 0.2s ease;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .row.mb-4:has(.text-primary:contains("Customer Information")) .btn:active {
+            transform: scale(0.95);
+        }
+    }
+
+    /* Mobile accessibility improvements */
+    @media (max-width: 767.98px) {
+        /* Better focus indicators for mobile */
+        .customer-dropdown-btn:focus-visible,
+        .form-control:focus-visible,
+        .form-select:focus-visible,
+        .btn:focus-visible {
+            outline: 3px solid #007bff;
+            outline-offset: 2px;
+        }
+        
+        /* Mobile form validation improvements */
+        .form-control.is-invalid,
+        .form-select.is-invalid {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+        }
+        
+        .form-control.is-valid,
+        .form-select.is-valid {
+            border-color: #28a745;
+            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+        }
+        
+        /* Mobile error message styling */
+        .invalid-feedback {
+            font-size: 0.8rem;
+            color: #dc3545;
+            margin-top: 0.25rem;
+        }
+        
+        .valid-feedback {
+            font-size: 0.8rem;
+            color: #28a745;
+            margin-top: 0.25rem;
+        }
     }
 </style>

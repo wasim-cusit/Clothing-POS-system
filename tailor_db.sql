@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Aug 18, 2025 at 02:03 PM
+-- Generation Time: Sep 03, 2025 at 08:35 AM
 -- Server version: 10.4.28-MariaDB
 -- PHP Version: 8.2.4
 
@@ -193,17 +193,6 @@ CREATE TABLE `cloths_orders` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `cloths_orders`
---
-
-INSERT INTO `cloths_orders` (`id`, `order_no`, `customer_id`, `order_date`, `delivery_date`, `sub_total`, `discount`, `total_amount`, `paid_amount`, `remaining_amount`, `details`, `status`, `created_by`, `created_at`) VALUES
-(4, NULL, 1, '2025-08-13', '0000-00-00', 500.00, 0.00, 500.00, 500.00, 0.00, '', 'Pending', 3, '2025-08-13 09:25:00'),
-(5, NULL, 1, '2025-08-13', '0000-00-00', 250.00, 0.00, 250.00, 200.00, 50.00, '', 'Completed', 3, '2025-08-13 09:36:24'),
-(7, NULL, 3, '2025-08-13', '0000-00-00', 2500.00, 0.00, 2500.00, 2000.00, 500.00, '', 'Pending', 3, '2025-08-13 12:28:27'),
-(8, NULL, 3, '2025-08-13', '0000-00-00', 2500.00, 0.00, 2500.00, 2400.00, 100.00, '', 'Pending', 3, '2025-08-13 13:18:34'),
-(9, NULL, 6, '2025-08-13', '0000-00-00', 7500.00, 0.00, 7500.00, 7300.00, 200.00, '', 'Pending', 3, '2025-08-13 13:20:48');
-
 -- --------------------------------------------------------
 
 --
@@ -347,26 +336,6 @@ CREATE TABLE `notifications` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `notifications`
---
-
-INSERT INTO `notifications` (`id`, `user_id`, `title`, `message`, `type`, `is_read`, `created_at`) VALUES
-(1, 1, '', 'Low stock alert: qasd stock is 12 (threshold: 23)', '', 1, '2025-08-12 10:47:43'),
-(2, 1, '', 'Low stock alert: alkaram cotan stock is 12 (threshold: 12)', '', 1, '2025-08-13 07:04:32'),
-(3, 1, '', 'Low stock alert: João Souza Silva stock is 2 (threshold: 2)', '', 1, '2025-08-13 07:09:35'),
-(4, 1, '', 'Low stock alert: João Souza Silva stock is 0 (threshold: 2)', '', 1, '2025-08-13 09:32:21'),
-(5, 1, '', 'Low stock alert: alkaram cotan stock is 10 (threshold: 12)', '', 1, '2025-08-13 09:51:03'),
-(6, 1, '', 'Low stock alert: alkaram cotan stock is 8 (threshold: 12)', '', 1, '2025-08-13 09:56:45'),
-(7, 1, '', 'Low stock alert: alkaram cotan stock is 10 (threshold: 12)', '', 1, '2025-08-13 10:09:43'),
-(8, 1, '', 'Low stock alert: alkaram cotan stock is 10 (threshold: 12)', '', 1, '2025-08-13 10:11:13'),
-(9, 1, '', 'Low stock alert: alkaram cotan stock is 10 (threshold: 12)', '', 1, '2025-08-13 10:15:41'),
-(10, 1, '', 'Low stock alert: alkaram cotan stock is 10 (threshold: 12)', '', 1, '2025-08-13 11:00:30'),
-(11, 1, '', 'Low stock alert: alkaram cotan stock is 8 (threshold: 12)', '', 1, '2025-08-13 11:20:58'),
-(12, 1, '', 'Low stock alert: Royal Tag stock is 23 (threshold: 23)', '', 1, '2025-08-14 10:37:59'),
-(13, 1, '', 'Low stock alert: Royal Tag stock is 2 (threshold: 23)', '', 1, '2025-08-14 13:15:25'),
-(14, 1, '', 'Low stock alert: Royal Tag stock is 0 (threshold: 23)', '', 1, '2025-08-17 21:36:48');
-
 -- --------------------------------------------------------
 
 --
@@ -390,17 +359,6 @@ CREATE TABLE `orders` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `orders`
---
-
-INSERT INTO `orders` (`id`, `order_no`, `customer_id`, `order_date`, `delivery_date`, `sub_total`, `discount`, `total_amount`, `paid_amount`, `remaining_amount`, `details`, `status`, `created_by`, `created_at`) VALUES
-(4, NULL, 1, '2025-08-13', '0000-00-00', 500.00, 0.00, 500.00, 500.00, 0.00, '', 'Pending', 3, '2025-08-13 09:25:00'),
-(5, NULL, 1, '2025-08-13', '0000-00-00', 250.00, 0.00, 250.00, 200.00, 50.00, '', 'Pending', 3, '2025-08-13 09:36:24'),
-(7, NULL, 3, '2025-08-13', '0000-00-00', 2500.00, 0.00, 2500.00, 2000.00, 500.00, '', 'Pending', 3, '2025-08-13 12:28:27'),
-(8, NULL, 3, '2025-08-13', '0000-00-00', 2500.00, 0.00, 2500.00, 2400.00, 100.00, '', 'Pending', 3, '2025-08-13 13:18:34'),
-(9, NULL, 6, '2025-08-13', '0000-00-00', 7500.00, 0.00, 7500.00, 7300.00, 200.00, '', 'Pending', 3, '2025-08-13 13:20:48');
-
 -- --------------------------------------------------------
 
 --
@@ -416,18 +374,6 @@ CREATE TABLE `order_items` (
   `unit_price` decimal(10,2) DEFAULT 0.00,
   `total_price` decimal(10,2) DEFAULT 0.00
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `order_items`
---
-
-INSERT INTO `order_items` (`id`, `order_id`, `product_id`, `description`, `quantity`, `unit_price`, `total_price`) VALUES
-(4, 4, NULL, 'denim', 2, 250.00, 500.00),
-(5, 5, NULL, 'denim', 1, 250.00, 250.00),
-(7, 7, NULL, 'alkaram', 1, 2500.00, 2500.00),
-(8, 8, NULL, 'alkaram', 1, 2500.00, 2500.00),
-(9, 9, NULL, 'alkaram', 2, 2500.00, 5000.00),
-(10, 9, NULL, 'alkaram', 1, 2500.00, 2500.00);
 
 -- --------------------------------------------------------
 
@@ -599,7 +545,7 @@ CREATE TABLE `return_percale` (
 --
 
 INSERT INTO `return_percale` (`id`, `return_no`, `return_type`, `customer_id`, `supplier_id`, `order_id`, `purchase_id`, `product_id`, `fabric_name`, `fabric_type`, `color`, `quantity`, `unit`, `original_price`, `return_price`, `return_reason`, `return_date`, `status`, `approved_by`, `approved_date`, `notes`, `created_by`, `created_at`, `updated_at`) VALUES
-(1, 'RET-001', 'customer_return', 4, NULL, NULL, NULL, NULL, 'Premium Cotton Percale', 'Cotton', 'White', 5.00, 'meters', 150.00, 120.00, 'Fabric quality not as expected', '2025-08-17', 'pending', NULL, NULL, 'Customer complaint about fabric texture', 1, '2025-08-17 22:32:48', '2025-08-17 23:03:27'),
+(1, 'RET-001', 'customer_return', 4, NULL, NULL, NULL, NULL, 'Premium Cotton Percale', 'Cotton', 'White', 5.00, 'meters', 150.00, 120.00, 'Fabric quality not as expected', '2025-08-17', 'completed', 1, '2025-09-02', 'Customer complaint about fabric texture', 1, '2025-08-17 22:32:48', '2025-09-02 09:31:36'),
 (2, 'RET-002', 'customer_return', 4, NULL, NULL, NULL, NULL, 'Silk Blend Percale', 'Silk', 'Blue', 3.50, 'meters', 200.00, 180.00, 'Color mismatch with order', '2025-08-17', 'rejected', 1, '2025-08-18', 'Supplier accepted return due to color variation', 1, '2025-08-17 22:32:48', '2025-08-17 23:04:14');
 
 -- --------------------------------------------------------
@@ -635,6 +581,7 @@ CREATE TABLE `sale` (
   `id` int(11) NOT NULL,
   `customer_id` int(11) DEFAULT NULL,
   `walk_in_cust_name` varchar(255) NOT NULL DEFAULT '0',
+  `reference_persons` varchar(255) DEFAULT NULL,
   `discount` decimal(15,2) NOT NULL DEFAULT 0.00,
   `after_discount` decimal(15,2) NOT NULL,
   `sale_date` date NOT NULL,
@@ -656,9 +603,11 @@ CREATE TABLE `sale` (
 -- Dumping data for table `sale`
 --
 
-INSERT INTO `sale` (`id`, `customer_id`, `walk_in_cust_name`, `discount`, `after_discount`, `sale_date`, `expiry_date`, `sale_no`, `subtotal`, `total_amount`, `paid_amount`, `due_amount`, `payment_method_id`, `notes`, `status`, `delivery_date`, `created_by`, `created_at`) VALUES
-(13, NULL, 'ahmad', 0.00, 529.00, '2025-08-14', NULL, 'SALE-001', 529.00, 529.00, 500.00, 29.00, 1, 'next time they will be pay the charges', 'pending', NULL, 1, '2025-08-14 13:15:25'),
-(14, 4, '', 0.00, 275.54, '2025-08-17', NULL, 'SALE-014', 275.54, 275.54, 0.00, 275.54, 7, '', 'pending', NULL, 1, '2025-08-17 21:36:48');
+INSERT INTO `sale` (`id`, `customer_id`, `walk_in_cust_name`, `reference_persons`, `discount`, `after_discount`, `sale_date`, `expiry_date`, `sale_no`, `subtotal`, `total_amount`, `paid_amount`, `due_amount`, `payment_method_id`, `notes`, `status`, `delivery_date`, `created_by`, `created_at`) VALUES
+(13, NULL, 'ahmad', NULL, 0.00, 529.00, '2025-08-14', NULL, 'SALE-001', 529.00, 529.00, 500.00, 29.00, 1, 'next time they will be pay the charges', 'pending', NULL, 1, '2025-08-14 13:15:25'),
+(14, 4, '', NULL, 0.00, 275.54, '2025-08-17', NULL, 'SALE-014', 275.54, 275.54, 0.00, 275.54, 7, '', 'pending', NULL, 1, '2025-08-17 21:36:48'),
+(15, 4, '', 'wasim', 0.00, 144.00, '2025-09-02', NULL, 'SALE-015', 144.00, 144.00, 0.00, 144.00, 3, '', 'pending', NULL, 1, '2025-09-02 07:25:10'),
+(16, 4, '', '', 0.00, 69.00, '2025-09-03', NULL, 'SALE-016', 69.00, 69.00, 0.00, 69.00, 1, '', 'pending', NULL, 1, '2025-09-03 06:11:29');
 
 -- --------------------------------------------------------
 
@@ -686,7 +635,9 @@ CREATE TABLE `sale_items` (
 
 INSERT INTO `sale_items` (`id`, `sale_id`, `product_id`, `warehouse_id`, `product_code`, `price`, `stock_qty`, `quantity`, `total_price`, `category_name`, `notes`) VALUES
 (11, 13, 21, 0, '232', 23.00, 23, 23, 529.00, 'Shirts', NULL),
-(12, 14, 21, 0, '', 23.00, 12, 12, 275.54, 'Shirts', 'Color: Yellow');
+(12, 14, 21, 0, '', 23.00, 12, 12, 275.54, 'Shirts', 'Color: Yellow'),
+(13, 15, 21, 0, '232-20250818-010', 12.00, 12, 12, 144.00, 'Shirts', 'Color: White'),
+(14, 16, 21, 0, '232-20250818-208', 23.00, 3, 3, 69.00, 'Shirts', 'Color: Yellow');
 
 -- --------------------------------------------------------
 
@@ -781,8 +732,8 @@ CREATE TABLE `stock_items` (
 INSERT INTO `stock_items` (`id`, `product_id`, `purchase_item_id`, `product_code`, `color`, `quantity`, `purchase_price`, `sale_price`, `stock_date`, `status`) VALUES
 (13, 21, 12, '232', '#000000', 0, 23.00, 23.00, '2025-08-14', 'available'),
 (15, 21, 14, '', '#000000', 0, 12.00, 122.00, '2025-08-15', 'sold'),
-(17, 21, 0, '232-20250818-010', '#000000', 12, 33.00, 233.00, '2025-08-17', 'available'),
-(18, 21, 0, '232-20250818-208', '#000000', 23, 32.00, 222.00, '2025-08-17', 'available'),
+(17, 21, 0, '232-20250818-010', '#000000', 0, 33.00, 233.00, '2025-08-17', 'sold'),
+(18, 21, 0, '232-20250818-208', '#000000', 20, 32.00, 222.00, '2025-08-17', 'available'),
 (19, 21, 16, '232', 'Blue', 23, 23.00, 23.00, '2025-08-18', 'available');
 
 -- --------------------------------------------------------
@@ -960,6 +911,9 @@ CREATE TABLE `unit_prices` (
   `id` int(11) NOT NULL,
   `unit_name` varchar(100) NOT NULL,
   `unit_price` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `karegar_price` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `material_price` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `zakat_percentage` decimal(5,2) NOT NULL DEFAULT 0.00,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -967,9 +921,9 @@ CREATE TABLE `unit_prices` (
 -- Dumping data for table `unit_prices`
 --
 
-INSERT INTO `unit_prices` (`id`, `unit_name`, `unit_price`, `created_at`) VALUES
-(2, 'denim', 250.00, '2025-08-13 08:05:02'),
-(3, 'alkaram', 2500.00, '2025-08-13 11:52:19');
+INSERT INTO `unit_prices` (`id`, `unit_name`, `unit_price`, `karegar_price`, `material_price`, `zakat_percentage`, `created_at`) VALUES
+(2, 'denim', 250.00, 0.00, 0.00, 100.00, '2025-08-13 08:05:02'),
+(3, 'alkaram', 2500.00, 0.00, 0.00, 4.00, '2025-08-13 11:52:19');
 
 --
 -- Indexes for dumped tables
@@ -1325,13 +1279,13 @@ ALTER TABLE `notifications`
 -- AUTO_INCREMENT for table `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `order_items`
 --
 ALTER TABLE `order_items`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `payment_method`
@@ -1379,13 +1333,13 @@ ALTER TABLE `roles`
 -- AUTO_INCREMENT for table `sale`
 --
 ALTER TABLE `sale`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT for table `sale_items`
 --
 ALTER TABLE `sale_items`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `sale_return`

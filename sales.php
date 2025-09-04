@@ -241,9 +241,46 @@ include 'includes/header.php';
         <main class="col-md-10 ms-sm-auto px-4 py-5" style="margin-top: 25px;">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="mb-0"><i class="bi bi-list-ul text-primary"></i> Sales History</h2>
-                <!-- <a href="add_sale.php" class="btn btn-primary">
-                    <i class="bi bi-cart-plus"></i> Add New Sale
-                </a> -->
+            </div>
+
+            <!-- Search Box Section -->
+            <div class="card mb-4 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-lg-8 col-md-7 col-sm-12 mb-3 mb-md-0">
+                            <div class="input-group">
+                                <span class="input-group-text bg-primary text-white">
+                                    <i class="bi bi-search"></i>
+                                </span>
+                                <input type="text" id="salesSearchInput" class="form-control form-control-lg" placeholder="Search sales by customer name, invoice number, reference persons, or date..." aria-label="Search sales">
+                                <button class="btn btn-outline-secondary" type="button" id="clearSearchBtn" style="display: none;">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-md-5 col-sm-12">
+                            <div class="d-flex gap-2 flex-wrap">
+                                <select id="filterStatus" class="form-select">
+                                    <option value="">All Status</option>
+                                    <option value="paid">Paid</option>
+                                    <option value="due">Due</option>
+                                </select>
+                                <select id="filterDate" class="form-select">
+                                    <option value="">All Dates</option>
+                                    <option value="today">Today</option>
+                                    <option value="week">This Week</option>
+                                    <option value="month">This Month</option>
+                                    <option value="year">This Year</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <div class="d-flex flex-wrap gap-2" id="searchTags" style="display: none;">
+                            <!-- Search tags will be displayed here -->
+                        </div>
+                    </div>
+                </div>
             </div>
             
 
@@ -294,6 +331,7 @@ include 'includes/header.php';
                             <tr>
                                 <th><i class="bi bi-receipt"></i> Invoice No</th>
                                 <th><i class="bi bi-person"></i> Customer</th>
+                                <th><i class="bi bi-people"></i> Reference</th>
                                 <th><i class="bi bi-calendar-event"></i> Sale Date</th>
                                 <th><i class="bi bi-percent"></i> Discount</th>
                                 <th><i class="bi bi-calculator"></i> After Discount</th>
@@ -325,6 +363,15 @@ include 'includes/header.php';
                                                 </div>
                                             <?php endif; ?>
                                         </div>
+                                    </td>
+                                    <td>
+                                        <?php if (!empty($sale['reference_persons'])): ?>
+                                            <span class="badge bg-info">
+                                                <i class="bi bi-people"></i> <?= htmlspecialchars($sale['reference_persons']) ?>
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="text-muted">-</span>
+                                        <?php endif; ?>
                                     </td>
                                     <td>
                                         <i class="bi bi-calendar-event"></i> 
@@ -734,6 +781,513 @@ include 'includes/header.php';
     }
 }
 
+/* Enhanced Mobile Responsiveness */
+@media (max-width: 1199.98px) {
+    .header-stats {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .header-stats .badge {
+        font-size: 0.75rem;
+        padding: 0.5rem 0.75rem;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .container-fluid {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+    
+    .main-content {
+        padding: 15px;
+    }
+    
+    /* Search box tablet layout */
+    .search-box-section .row {
+        gap: 1rem;
+    }
+    
+    .search-box-section .col-lg-8,
+    .search-box-section .col-lg-4 {
+        margin-bottom: 1rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .container-fluid {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+    
+    .main-content {
+        padding: 10px;
+        margin-top: 20px;
+    }
+    
+    /* Mobile-optimized header */
+    .d-flex.justify-content-between.align-items-center {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .d-flex.justify-content-between.align-items-center h2 {
+        font-size: 1.5rem;
+        margin-bottom: 0;
+    }
+    
+    /* Mobile search box */
+    .search-box-section {
+        margin-bottom: 1rem;
+    }
+    
+    .search-box-section .card-body {
+        padding: 1rem;
+    }
+    
+    .search-box-section .row {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .search-box-section .col-lg-8,
+    .search-box-section .col-lg-4 {
+        width: 100%;
+        margin-bottom: 0;
+    }
+    
+    /* Mobile search input */
+    .search-box-section .input-group {
+        flex-direction: column;
+    }
+    
+    .search-box-section .input-group-text {
+        border-radius: 8px 8px 0 0;
+        justify-content: center;
+        padding: 0.75rem;
+    }
+    
+    .search-box-section .form-control {
+        border-radius: 0 0 8px 8px;
+        border-top: none;
+        padding: 0.75rem;
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+    
+    .search-box-section .btn {
+        border-radius: 8px;
+        margin-top: 0.5rem;
+        width: 100%;
+    }
+    
+    /* Mobile filters */
+    .search-box-section .d-flex {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .search-box-section .form-select {
+        width: 100%;
+        padding: 0.75rem;
+        font-size: 16px;
+        border-radius: 8px;
+    }
+    
+    /* Mobile search tags */
+    .search-box-section #searchTags {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .search-box-section .badge {
+        width: 100%;
+        justify-content: space-between;
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+    
+    /* Mobile table improvements */
+    .table-responsive {
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 1rem;
+    }
+    
+    .table {
+        font-size: 0.85rem;
+    }
+    
+    .table thead th {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.8rem;
+        white-space: nowrap;
+    }
+    
+    .table tbody td {
+        padding: 0.75rem 0.5rem;
+        vertical-align: top;
+    }
+    
+    /* Mobile action buttons */
+    .action-buttons .btn-group-vertical {
+        flex-direction: row;
+        gap: 0.25rem;
+        flex-wrap: wrap;
+    }
+    
+    .action-buttons .btn {
+        padding: 0.5rem;
+        font-size: 0.8rem;
+        min-width: 40px;
+    }
+    
+    /* Mobile customer info */
+    .customer-info {
+        padding: 0.5rem;
+        font-size: 0.85rem;
+    }
+    
+    .customer-mobile {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    /* Mobile badges */
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.5rem 0.75rem;
+    }
+    
+    /* Mobile header stats */
+    .header-stats {
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+    
+    .header-stats .badge {
+        width: 100%;
+        text-align: center;
+        margin: 0 !important;
+    }
+    
+    /* Mobile card improvements */
+    .card {
+        margin-bottom: 1rem;
+        border-radius: 12px;
+    }
+    
+    .card-header {
+        padding: 1rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    /* Mobile modal improvements */
+    .modal-dialog {
+        margin: 1rem;
+        max-width: calc(100% - 2rem);
+    }
+    
+    .modal-body {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .container-fluid {
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+    
+    .main-content {
+        padding: 5px;
+    }
+    
+    /* Ultra-small mobile optimization */
+    .d-flex.justify-content-between.align-items-center h2 {
+        font-size: 1.25rem;
+    }
+    
+    /* Mobile search box */
+    .search-box-section .card-body {
+        padding: 0.75rem;
+    }
+    
+    .search-box-section .form-control,
+    .search-box-section .form-select {
+        padding: 0.6rem;
+        font-size: 0.9rem;
+    }
+    
+    .search-box-section .input-group-text {
+        padding: 0.6rem;
+    }
+    
+    /* Mobile table */
+    .table {
+        font-size: 0.8rem;
+    }
+    
+    .table thead th {
+        padding: 0.5rem 0.25rem;
+        font-size: 0.75rem;
+    }
+    
+    .table tbody td {
+        padding: 0.5rem 0.25rem;
+    }
+    
+    /* Mobile action buttons */
+    .action-buttons .btn {
+        padding: 0.4rem;
+        font-size: 0.75rem;
+        min-width: 35px;
+    }
+    
+    /* Mobile badges */
+    .badge {
+        font-size: 0.7rem;
+        padding: 0.4rem 0.6rem;
+    }
+    
+    /* Mobile search tags */
+    .search-box-section .badge {
+        padding: 0.6rem;
+        font-size: 0.8rem;
+    }
+}
+
+/* Touch-friendly interactions */
+@media (hover: none) and (pointer: coarse) {
+    .btn:hover {
+        transform: none;
+    }
+    
+    .btn:active {
+        transform: scale(0.95);
+    }
+    
+    .badge:hover {
+        transform: none;
+    }
+    
+    .badge:active {
+        transform: scale(0.95);
+    }
+    
+    .form-control:focus,
+    .form-select:focus {
+        transform: scale(1.02);
+    }
+}
+
+/* Landscape mobile optimization */
+@media (max-width: 767.98px) and (orientation: landscape) {
+    .main-content {
+        padding: 0.5rem;
+    }
+    
+    .search-box-section .row {
+        flex-direction: row;
+        gap: 0.5rem;
+    }
+    
+    .search-box-section .col-lg-8 {
+        width: 60%;
+    }
+    
+    .search-box-section .col-lg-4 {
+        width: 40%;
+    }
+    
+    .search-box-section .form-control,
+    .search-box-section .form-select {
+        padding: 0.5rem;
+    }
+}
+
+/* Mobile-first responsive utilities */
+.d-mobile-none {
+    display: none !important;
+}
+
+.d-mobile-block {
+    display: block !important;
+}
+
+@media (min-width: 768px) {
+    .d-mobile-none {
+        display: initial !important;
+    }
+    
+    .d-mobile-block {
+        display: initial !important;
+    }
+}
+
+/* Mobile form validation improvements */
+@media (max-width: 767.98px) {
+    .form-control.is-invalid,
+    .form-select.is-invalid {
+        border-width: 2px;
+    }
+    
+    .invalid-feedback,
+    .valid-feedback {
+        font-size: 0.8rem;
+        margin-top: 0.25rem;
+    }
+}
+
+/* Mobile accessibility improvements */
+@media (max-width: 767.98px) {
+    /* Better focus indicators for mobile */
+    .form-control:focus-visible,
+    .form-select:focus-visible,
+    .btn:focus-visible {
+        outline: 3px solid #007bff;
+        outline-offset: 2px;
+    }
+    
+    /* Mobile form validation improvements */
+    .form-control.is-invalid,
+    .form-select.is-invalid {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+    }
+    
+    .form-control.is-valid,
+    .form-select.is-valid {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    }
+    
+    /* Mobile error message styling */
+    .invalid-feedback {
+        font-size: 0.8rem;
+        color: #dc3545;
+        margin-top: 0.25rem;
+    }
+    
+    .valid-feedback {
+        font-size: 0.8rem;
+        color: #28a745;
+        margin-top: 0.25rem;
+    }
+}
+
+/* Performance optimizations for mobile */
+@media (max-width: 767.98px) {
+    .table {
+        will-change: transform;
+        backface-visibility: hidden;
+    }
+    
+    .form-control, .form-select {
+        will-change: transform;
+        backface-visibility: hidden;
+    }
+    
+    .btn {
+        will-change: transform;
+        backface-visibility: hidden;
+    }
+    
+    .card {
+        will-change: transform;
+        backface-visibility: hidden;
+    }
+    
+    /* Search box performance optimizations */
+    .search-box-section {
+        will-change: transform;
+        backface-visibility: hidden;
+    }
+    
+    .search-box-section .input-group {
+        will-change: transform;
+        backface-visibility: hidden;
+    }
+}
+
+/* Enhanced search box styling */
+.search-box-section .card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid #dee2e6;
+    transition: all 0.3s ease;
+}
+
+.search-box-section .card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+.search-box-section .input-group-text {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    border: none;
+    color: white;
+    font-weight: 600;
+}
+
+.search-box-section .form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.search-box-section .form-select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.search-box-section .btn-outline-secondary {
+    border-color: #6c757d;
+    color: #6c757d;
+}
+
+.search-box-section .btn-outline-secondary:hover {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+
+/* Search tags styling */
+.search-box-section .badge {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.search-box-section .badge:hover {
+    transform: scale(1.05);
+}
+
+.search-box-section .badge .btn-close {
+    font-size: 0.7rem;
+    margin-left: 0.5rem;
+}
+
+/* No results message styling */
+.no-results-message .text-muted {
+    color: #6c757d !important;
+}
+
+.no-results-message .btn-outline-primary {
+    border-color: #007bff;
+    color: #007bff;
+    transition: all 0.2s ease;
+}
+
+.no-results-message .btn-outline-primary:hover {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: white;
+    transform: translateY(-1px);
+}
+
 /* Modal Styling */
 .modal-content {
     border-radius: 16px;
@@ -751,6 +1305,7 @@ include 'includes/header.php';
     border-radius: 0 0 16px 16px;
 }
 
+/* WhatsApp input group styling */
 .input-group-text {
     background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
     color: white;
@@ -805,8 +1360,7 @@ function sendWhatsAppMessage() {
             }
         })
         .catch(error => {
-            console.error('Error:', error);
-            alert('Error: Could not load sale data');
+            // Handle error silently
         });
 }
 
@@ -883,5 +1437,279 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // Sales Search Functionality
+    initializeSalesSearch();
 });
+
+// Sales Search Functionality
+function initializeSalesSearch() {
+    const searchInput = document.getElementById('salesSearchInput');
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+    const filterStatus = document.getElementById('filterStatus');
+    const filterDate = document.getElementById('filterDate');
+    const searchTags = document.getElementById('searchTags');
+    const tableRows = document.querySelectorAll('tbody tr');
+    
+    let currentSearchTerm = '';
+    let currentStatusFilter = '';
+    let currentDateFilter = '';
+
+    // Search input event listener
+    searchInput.addEventListener('input', function() {
+        currentSearchTerm = this.value.toLowerCase().trim();
+        updateClearButton();
+        filterSales();
+    });
+
+    // Clear search button
+    clearSearchBtn.addEventListener('click', function() {
+        searchInput.value = '';
+        currentSearchTerm = '';
+        updateClearButton();
+        filterSales();
+    });
+
+    // Status filter
+    filterStatus.addEventListener('change', function() {
+        currentStatusFilter = this.value;
+        filterSales();
+    });
+
+    // Date filter
+    filterDate.addEventListener('change', function() {
+        currentDateFilter = this.value;
+        filterSales();
+    });
+
+    // Update clear button visibility
+    function updateClearButton() {
+        if (currentSearchTerm || currentStatusFilter || currentDateFilter) {
+            clearSearchBtn.style.display = 'block';
+        } else {
+            clearSearchBtn.style.display = 'none';
+        }
+    }
+
+    // Filter sales function
+    function filterSales() {
+        let visibleCount = 0;
+        let hiddenCount = 0;
+
+        tableRows.forEach(row => {
+            if (row.cells.length < 12) return; // Skip empty rows
+
+            const invoiceNo = row.cells[0]?.textContent?.toLowerCase() || '';
+            const customerName = row.cells[1]?.textContent?.toLowerCase() || '';
+            const reference = row.cells[2]?.textContent?.toLowerCase() || '';
+            const saleDate = row.cells[3]?.textContent?.toLowerCase() || '';
+            const dueAmount = row.cells[8]?.textContent?.toLowerCase() || '';
+            
+            let shouldShow = true;
+
+            // Text search filter
+            if (currentSearchTerm) {
+                const searchMatch = invoiceNo.includes(currentSearchTerm) ||
+                                  customerName.includes(currentSearchTerm) ||
+                                  reference.includes(currentSearchTerm) ||
+                                  saleDate.includes(currentSearchTerm);
+                shouldShow = shouldShow && searchMatch;
+            }
+
+            // Status filter
+            if (currentStatusFilter) {
+                if (currentStatusFilter === 'paid') {
+                    shouldShow = shouldShow && dueAmount.includes('paid');
+                } else if (currentStatusFilter === 'due') {
+                    shouldShow = shouldShow && !dueAmount.includes('paid') && dueAmount.includes('pkr');
+                }
+            }
+
+            // Date filter
+            if (currentDateFilter && shouldShow) {
+                const today = new Date();
+                const saleDateObj = parseSaleDate(row.cells[3]?.textContent || '');
+                
+                if (saleDateObj) {
+                    switch (currentDateFilter) {
+                        case 'today':
+                            shouldShow = isSameDay(saleDateObj, today);
+                            break;
+                        case 'week':
+                            shouldShow = isSameWeek(saleDateObj, today);
+                            break;
+                        case 'month':
+                            shouldShow = isSameMonth(saleDateObj, today);
+                            break;
+                        case 'year':
+                            shouldShow = isSameYear(saleDateObj, today);
+                            break;
+                    }
+                }
+            }
+
+            // Show/hide row
+            if (shouldShow) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+                hiddenCount++;
+            }
+        });
+
+        // Update search tags
+        updateSearchTags();
+        
+        // Show no results message if needed
+        showNoResultsMessage(visibleCount, hiddenCount);
+    }
+
+    // Parse sale date from table cell
+    function parseSaleDate(dateText) {
+        try {
+            // Extract date from text like "📅 15 Dec 2024"
+            const dateMatch = dateText.match(/(\d{1,2})\s+(\w{3})\s+(\d{4})/);
+            if (dateMatch) {
+                const day = parseInt(dateMatch[1]);
+                const month = dateMatch[2];
+                const year = parseInt(dateMatch[3]);
+                
+                const monthMap = {
+                    'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+                    'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+                };
+                
+                return new Date(year, monthMap[month], day);
+            }
+        } catch (e) {
+            console.error('Error parsing date:', e);
+        }
+        return null;
+    }
+
+    // Date comparison functions
+    function isSameDay(date1, date2) {
+        return date1.getDate() === date2.getDate() &&
+               date1.getMonth() === date2.getMonth() &&
+               date1.getFullYear() === date2.getFullYear();
+    }
+
+    function isSameWeek(date1, date2) {
+        const oneDay = 24 * 60 * 60 * 1000;
+        const diffTime = Math.abs(date2 - date1);
+        const diffDays = Math.ceil(diffTime / oneDay);
+        return diffDays <= 7;
+    }
+
+    function isSameMonth(date1, date2) {
+        return date1.getMonth() === date2.getMonth() &&
+               date1.getFullYear() === date2.getFullYear();
+    }
+
+    function isSameYear(date1, date2) {
+        return date1.getFullYear() === date2.getFullYear();
+    }
+
+    // Update search tags display
+    function updateSearchTags() {
+        searchTags.innerHTML = '';
+        const hasFilters = currentSearchTerm || currentStatusFilter || currentDateFilter;
+        
+        if (hasFilters) {
+            searchTags.style.display = 'flex';
+            
+            if (currentSearchTerm) {
+                addSearchTag('Search: ' + currentSearchTerm, 'primary');
+            }
+            if (currentStatusFilter) {
+                addSearchTag('Status: ' + currentStatusFilter, 'success');
+            }
+            if (currentDateFilter) {
+                addSearchTag('Date: ' + currentDateFilter, 'info');
+            }
+        } else {
+            searchTags.style.display = 'none';
+        }
+    }
+
+    // Add search tag
+    function addSearchTag(text, color) {
+        const tag = document.createElement('span');
+        tag.className = `badge bg-${color} d-flex align-items-center gap-1`;
+        tag.innerHTML = `
+            ${text}
+            <button type="button" class="btn-close btn-close-white btn-sm" 
+                    onclick="removeSearchTag(this)" aria-label="Remove filter">
+            </button>
+        `;
+        searchTags.appendChild(tag);
+    }
+
+    // Show no results message
+    function showNoResultsMessage(visibleCount, hiddenCount) {
+        const existingMessage = document.querySelector('.no-results-message');
+        if (existingMessage) {
+            existingMessage.remove();
+        }
+
+        if (visibleCount === 0 && (currentSearchTerm || currentStatusFilter || currentDateFilter)) {
+            const tbody = document.querySelector('tbody');
+            const noResultsRow = document.createElement('tr');
+            noResultsRow.className = 'no-results-message';
+            noResultsRow.innerHTML = `
+                <td colspan="12" class="text-center py-5">
+                    <div class="text-muted">
+                        <i class="bi bi-search-x fs-1"></i>
+                        <h5 class="mt-3">No sales found</h5>
+                        <p>Try adjusting your search criteria or filters.</p>
+                        <button class="btn btn-outline-primary btn-sm" onclick="clearAllFilters()">
+                            <i class="bi bi-arrow-clockwise"></i> Clear All Filters
+                        </button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(noResultsRow);
+        }
+    }
+}
+
+// Remove search tag function
+function removeSearchTag(button) {
+    const tag = button.closest('.badge');
+    const tagText = tag.textContent.trim();
+    
+    if (tagText.includes('Search:')) {
+        document.getElementById('salesSearchInput').value = '';
+    } else if (tagText.includes('Status:')) {
+        document.getElementById('filterStatus').value = '';
+    } else if (tagText.includes('Date:')) {
+        document.getElementById('filterDate').value = '';
+    }
+    
+    tag.remove();
+    
+    // Trigger search update
+    const event = new Event('input');
+    document.getElementById('salesSearchInput').dispatchEvent(event);
+    
+    const changeEvent = new Event('change');
+    document.getElementById('filterStatus').dispatchEvent(changeEvent);
+    document.getElementById('filterDate').dispatchEvent(changeEvent);
+}
+
+// Clear all filters function
+function clearAllFilters() {
+    document.getElementById('salesSearchInput').value = '';
+    document.getElementById('filterStatus').value = '';
+    document.getElementById('filterDate').value = '';
+    
+    // Trigger search update
+    const event = new Event('input');
+    document.getElementById('salesSearchInput').dispatchEvent(event);
+    
+    const changeEvent = new Event('change');
+    document.getElementById('filterStatus').dispatchEvent(changeEvent);
+    document.getElementById('filterDate').dispatchEvent(changeEvent);
+}
 </script>

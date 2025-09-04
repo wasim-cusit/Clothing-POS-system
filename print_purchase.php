@@ -240,7 +240,7 @@ function safe_get_setting($key, $default = '') {
     <button class="print-button" onclick="window.print()">🖨️ Print Invoice</button>
     
     <div class="invoice-header">
-        <div class="company-name"><?= htmlspecialchars(safe_get_setting('company_name', 'TAILOR SHOP')) ?></div>
+        <div class="company-name"><?= htmlspecialchars(safe_get_setting('company_name', 'WASIM')) ?></div>
         <div class="company-info">
             <strong>PURCHASE INVOICE</strong><br>
             <?= htmlspecialchars(safe_get_setting('company_tagline', 'Professional Tailoring Services')) ?><br>

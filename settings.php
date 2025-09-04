@@ -548,30 +548,6 @@ include 'includes/header.php';
                                 <div class="form-text">Type of notification sound</div>
                             </div>
                         </div>
-
-                        <!-- Notification Testing -->
-                        <div class="row mt-4">
-                            <div class="col-12">
-                                <div class="alert alert-info">
-                                    <h6 class="alert-heading"><i class="bi bi-info-circle me-2"></i>Test Your Notification Settings</h6>
-                                    <p class="mb-2">Use these buttons to test your notification configuration:</p>
-                                    <div class="d-flex gap-2 flex-wrap">
-                                        <button type="button" class="btn btn-success btn-sm" onclick="testNotification('success', 'This is a success notification test!')">
-                                            <i class="bi bi-check-circle me-1"></i>Test Success
-                                        </button>
-                                        <button type="button" class="btn btn-warning btn-sm" onclick="testNotification('warning', 'This is a warning notification test!')">
-                                            <i class="bi bi-exclamation-triangle me-1"></i>Test Warning
-                                        </button>
-                                        <button type="button" class="btn btn-danger btn-sm" onclick="testNotification('danger', 'This is an error notification test!')">
-                                            <i class="bi bi-x-circle me-1"></i>Test Error
-                                        </button>
-                                        <button type="button" class="btn btn-info btn-sm" onclick="testNotification('info', 'This is an info notification test!')">
-                                            <i class="bi bi-info-circle me-1"></i>Test Info
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
@@ -742,61 +718,6 @@ document.querySelector('input[name="company_name"]').addEventListener('input', f
     }
 });
 
-// Notification testing function
-function testNotification(type, message) {
-    // Get notification settings
-    const autoHide = document.querySelector('select[name="notification_auto_hide"]').value;
-    const position = document.querySelector('select[name="notification_position"]').value;
-    const soundEnabled = document.querySelector('input[name="notification_sound"]').checked;
-    
-    // Create notification element
-    const notification = document.createElement('div');
-    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-    
-    // Set position based on settings
-    const positionStyles = {
-        'top-right': 'top: 20px; right: 20px;',
-        'top-left': 'top: 20px; left: 20px;',
-        'bottom-right': 'bottom: 20px; right: 20px;',
-        'bottom-left': 'bottom: 20px; left: 20px;',
-        'center': 'top: 50%; left: 50%; transform: translate(-50%, -50%);'
-    };
-    
-    notification.style.cssText = `${positionStyles[position] || positionStyles['top-right']} z-index: 9999; min-width: 300px; max-width: 400px;`;
-    
-    notification.innerHTML = `
-        <div class="d-flex align-items-center">
-            <div class="flex-grow-1">
-                <strong>${type.charAt(0).toUpperCase() + type.slice(1)}:</strong> ${message}
-            </div>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    `;
-    
-    // Add to page
-    document.body.appendChild(notification);
-    
-    // Play sound if enabled
-    if (soundEnabled) {
-        playNotificationSound();
-    }
-    
-    // Auto-hide based on settings
-    if (autoHide > 0) {
-        setTimeout(() => {
-            if (notification.parentNode) {
-                const bsAlert = new bootstrap.Alert(notification);
-                bsAlert.close();
-            }
-        }, autoHide * 1000);
-    }
-    
-    // Manual close functionality
-    notification.querySelector('.btn-close').addEventListener('click', () => {
-        notification.remove();
-    });
-}
-
 // Play notification sound
 function playNotificationSound() {
     const soundType = document.querySelector('select[name="notification_sound_type"]').value;
@@ -820,8 +741,8 @@ function playNotificationSound() {
             const frequency = frequencies[soundType] || 800;
             playBeep(audioContext, frequency);
         }
-    } catch (e) {
-        console.log('Audio playback not supported');
+    } catch (error) {
+        // Audio playback not supported
     }
 }
 

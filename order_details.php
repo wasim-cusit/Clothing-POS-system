@@ -3,7 +3,7 @@ require_once 'includes/auth.php';
 require_login();
 require_once 'includes/config.php';
 
-$activePage = 'orders';
+$activePage = 'order';
 
 // Get order ID from URL
 $order_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
@@ -17,7 +17,7 @@ try {
     // Fetch order details
     $stmt = $pdo->prepare("
         SELECT o.*, c.name AS customer_name, c.mobile, c.address, c.email
-        FROM cloths_orders o 
+        FROM orders o 
         LEFT JOIN customer c ON o.customer_id = c.id 
         WHERE o.id = ?
     ");

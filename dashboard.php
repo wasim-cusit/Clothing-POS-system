@@ -93,33 +93,322 @@ try {
 include 'includes/header.php';
 ?>
 
+<style>
+/* Dashboard-specific mobile responsive styles */
+.dashboard-stats-card {
+    transition: all 0.3s ease;
+    border-radius: 12px;
+    overflow: hidden;
+    will-change: transform;
+}
+
+.dashboard-stats-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.dashboard-stats-card .card-body {
+    padding: 1.5rem;
+}
+
+.dashboard-stats-card .stats-icon {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    font-size: 1.5rem;
+}
+
+.dashboard-stats-card .stats-content h6 {
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-stats-card .stats-content h4 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0;
+}
+
+/* Mobile-first responsive grid */
+@media (max-width: 767.98px) {
+    .dashboard-stats-card .card-body {
+        padding: 1rem;
+    }
+    
+    .dashboard-stats-card .stats-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.25rem;
+    }
+    
+    .dashboard-stats-card .stats-content h6 {
+        font-size: 0.8rem;
+    }
+    
+    .dashboard-stats-card .stats-content h4 {
+        font-size: 1.25rem;
+    }
+    
+    /* Stack cards vertically on mobile */
+    .row.g-4 > [class*="col-"] {
+        margin-bottom: 1rem;
+    }
+    
+    /* Daily books summary mobile layout */
+    .daily-books-summary .col-md-3 {
+        margin-bottom: 1rem;
+    }
+    
+    .daily-books-summary .d-flex {
+        flex-direction: column;
+        text-align: center;
+        padding: 1rem;
+    }
+    
+    .daily-books-summary .stats-icon {
+        margin: 0 auto 0.5rem auto;
+    }
+    
+    /* Chart container mobile optimization */
+    .chart-container {
+        height: 300px;
+        margin-bottom: 1rem;
+    }
+    
+    /* Quick actions mobile layout */
+    .quick-actions .btn {
+        margin-bottom: 0.5rem;
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    /* Tables mobile optimization */
+    .table-responsive {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    .table th,
+    .table td {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.85rem;
+        vertical-align: middle;
+    }
+    
+    /* Mobile card spacing */
+    .card {
+        margin-bottom: 1rem;
+        border-radius: 12px;
+    }
+    
+    .card-header {
+        padding: 1rem;
+        border-bottom: 1px solid rgba(0,0,0,0.125);
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .dashboard-stats-card .card-body {
+        padding: 0.75rem;
+    }
+    
+    .dashboard-stats-card .stats-icon {
+        width: 45px;
+        height: 45px;
+        font-size: 1.1rem;
+    }
+    
+    .dashboard-stats-card .stats-content h6 {
+        font-size: 0.75rem;
+    }
+    
+    .dashboard-stats-card .stats-content h4 {
+        font-size: 1.1rem;
+    }
+    
+    /* Ultra-small mobile optimization */
+    .container-fluid {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+    
+    .main-content {
+        padding: 0.5rem;
+    }
+    
+    /* Mobile table improvements */
+    .table th,
+    .table td {
+        padding: 0.5rem 0.25rem;
+        font-size: 0.8rem;
+    }
+    
+    /* Mobile button improvements */
+    .btn {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.85rem;
+        border-radius: 8px;
+    }
+}
+
+/* Touch-friendly interactions */
+@media (hover: none) and (pointer: coarse) {
+    .dashboard-stats-card:hover {
+        transform: none;
+    }
+    
+    .dashboard-stats-card:active {
+        transform: scale(0.98);
+    }
+    
+    .btn:active {
+        transform: scale(0.95);
+    }
+}
+
+/* Landscape mobile optimization */
+@media (max-width: 767.98px) and (orientation: landscape) {
+    .dashboard-stats-card .card-body {
+        padding: 0.75rem;
+    }
+    
+    .chart-container {
+        height: 250px;
+    }
+}
+
+/* Enhanced mobile navigation for dashboard */
+@media (max-width: 1199.98px) {
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 1.5rem;
+        margin-bottom: 0;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .dashboard-header {
+        margin-bottom: 1.5rem;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 1.25rem;
+    }
+}
+
+/* Mobile chart responsiveness */
+.chart-container {
+    position: relative;
+    height: 400px;
+    width: 100%;
+    contain: layout style paint;
+}
+
+@media (max-width: 767.98px) {
+    .chart-container {
+        height: 300px;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .chart-container {
+        height: 250px;
+    }
+}
+
+/* Mobile-friendly data tables */
+.mobile-table {
+    font-size: 0.9rem;
+}
+
+.mobile-table .table th,
+.mobile-table .table td {
+    padding: 0.75rem 0.5rem;
+}
+
+@media (max-width: 575.98px) {
+    .mobile-table .table th,
+    .mobile-table .table td {
+        padding: 0.5rem 0.25rem;
+        font-size: 0.8rem;
+    }
+}
+
+/* Mobile quick actions grid */
+.quick-actions-grid {
+    display: grid;
+    gap: 0.75rem;
+}
+
+@media (max-width: 767.98px) {
+    .quick-actions-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (min-width: 768px) {
+    .quick-actions-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1200px) {
+    .quick-actions-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Performance optimizations */
+.dashboard-stats-card,
+.btn,
+.card {
+    backface-visibility: hidden;
+    transform: translateZ(0);
+}
+
+/* Prevent layout thrashing */
+.chart-container canvas {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+</style>
+
 <div class="container-fluid">
     <div class="row">
         <?php include 'includes/sidebar.php'; ?>
         <main class="col-md-10 ms-sm-auto px-4 py-5" style="margin-top: 25px;">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="mb-0">
-                    <i class="bi bi-speedometer2 text-primary me-2"></i>
-                    Dashboard
-                </h2>
-                <div class="text-muted">
-                    <i class="bi bi-calendar3 me-1"></i>
-                    <?= date('l, F j, Y') ?>
-                </div>
+            <div class="dashboard-header d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2">
+                    <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                </h1>
             </div>
 
             <!-- Stats Cards Row 1 -->
             <div class="row g-4 mb-4">
-                <div class="col-xl-3 col-md-6">
-                    <div class="card border-0 shadow-sm h-100">
+                <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6">
+                    <div class="card dashboard-stats-card border-0 shadow-sm h-100">
                         <div class="card-body">
                             <div class="d-flex align-items-center">
                                 <div class="flex-shrink-0">
-                                    <div class="bg-primary bg-opacity-10 p-3 rounded">
-                                        <i class="bi bi-cash-coin text-primary fs-4"></i>
+                                    <div class="stats-icon bg-primary bg-opacity-10">
+                                        <i class="bi bi-cash-coin text-primary"></i>
                                     </div>
                                 </div>
-                                <div class="flex-grow-1 ms-3">
+                                <div class="flex-grow-1 ms-3 stats-content">
                                     <h6 class="card-title text-muted mb-1">Today's Sales</h6>
                                     <h4 class="mb-0 text-primary">PKR <?= number_format($today_sales, 2) ?></h4>
                                 </div>
@@ -128,16 +417,16 @@ include 'includes/header.php';
                     </div>
                 </div>
 
-                <div class="col-xl-3 col-md-6">
-                    <div class="card border-0 shadow-sm h-100">
+                <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6">
+                    <div class="card dashboard-stats-card border-0 shadow-sm h-100">
                         <div class="card-body">
                             <div class="d-flex align-items-center">
                                 <div class="flex-shrink-0">
-                                    <div class="bg-success bg-opacity-10 p-3 rounded">
-                                        <i class="bi bi-graph-up text-success fs-4"></i>
+                                    <div class="stats-icon bg-success bg-opacity-10">
+                                        <i class="bi bi-graph-up text-success"></i>
                                     </div>
                                 </div>
-                                <div class="flex-grow-1 ms-3">
+                                <div class="flex-grow-1 ms-3 stats-content">
                                     <h6 class="card-title text-muted mb-1">This Month</h6>
                                     <h4 class="mb-0 text-success">PKR <?= number_format($month_sales, 2) ?></h4>
                                 </div>
@@ -146,16 +435,16 @@ include 'includes/header.php';
                     </div>
                 </div>
 
-                <div class="col-xl-3 col-md-6">
-                    <div class="card border-0 shadow-sm h-100">
+                <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6">
+                    <div class="card dashboard-stats-card border-0 shadow-sm h-100">
                         <div class="card-body">
                             <div class="d-flex align-items-center">
                                 <div class="flex-shrink-0">
-                                    <div class="bg-info bg-opacity-10 p-3 rounded">
-                                        <i class="bi bi-box-seam text-info fs-4"></i>
+                                    <div class="stats-icon bg-info bg-opacity-10">
+                                        <i class="bi bi-box-seam text-info"></i>
                                     </div>
                                 </div>
-                                <div class="flex-grow-1 ms-3">
+                                <div class="flex-grow-1 ms-3 stats-content">
                                     <h6 class="card-title text-muted mb-1">Stock Value</h6>
                                     <h4 class="mb-0 text-info">PKR <?= number_format($stock_value, 2) ?></h4>
                                 </div>
@@ -164,16 +453,16 @@ include 'includes/header.php';
                     </div>
                 </div>
 
-                <div class="col-xl-3 col-md-6">
-                    <div class="card border-0 shadow-sm h-100">
+                <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6">
+                    <div class="card dashboard-stats-card border-0 shadow-sm h-100">
                         <div class="card-body">
                             <div class="d-flex align-items-center">
                                 <div class="flex-shrink-0">
-                                    <div class="bg-warning bg-opacity-10 p-3 rounded">
-                                        <i class="bi bi-people text-warning fs-4"></i>
+                                    <div class="stats-icon bg-warning bg-opacity-10">
+                                        <i class="bi bi-people text-warning"></i>
                                     </div>
                                 </div>
-                                <div class="flex-grow-1 ms-3">
+                                <div class="flex-grow-1 ms-3 stats-content">
                                     <h6 class="card-title text-muted mb-1">Total Customers</h6>
                                     <h4 class="mb-0 text-warning"><?= number_format($total_customers) ?></h4>
                                 </div>
@@ -185,16 +474,16 @@ include 'includes/header.php';
 
             <!-- Stats Cards Row 2 -->
             <div class="row g-4 mb-4">
-                <div class="col-xl-3 col-md-6">
-                    <div class="card border-0 shadow-sm h-100">
+                <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6">
+                    <div class="card dashboard-stats-card border-0 shadow-sm h-100">
                         <div class="card-body">
                             <div class="d-flex align-items-center">
                                 <div class="flex-shrink-0">
-                                    <div class="bg-danger bg-opacity-10 p-3 rounded">
-                                        <i class="bi bi-exclamation-triangle text-danger fs-4"></i>
+                                    <div class="stats-icon bg-danger bg-opacity-10">
+                                        <i class="bi bi-exclamation-triangle text-danger"></i>
                                     </div>
                                 </div>
-                                <div class="flex-grow-1 ms-3">
+                                <div class="flex-grow-1 ms-3 stats-content">
                                     <h6 class="card-title text-muted mb-1">Low Stock Alerts</h6>
                                     <h4 class="mb-0 text-danger"><?= $low_stock_count ?></h4>
                                 </div>
@@ -203,16 +492,16 @@ include 'includes/header.php';
                     </div>
                 </div>
 
-                <div class="col-xl-3 col-md-6">
-                    <div class="card border-0 shadow-sm h-100">
+                <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6">
+                    <div class="card dashboard-stats-card border-0 shadow-sm h-100">
                         <div class="card-body">
                             <div class="d-flex align-items-center">
                                 <div class="flex-shrink-0">
-                                    <div class="bg-secondary bg-opacity-10 p-3 rounded">
-                                        <i class="bi bi-calendar-check text-secondary fs-4"></i>
+                                    <div class="stats-icon bg-secondary bg-opacity-10">
+                                        <i class="bi bi-calendar-check text-secondary"></i>
                                     </div>
                                 </div>
-                                <div class="flex-grow-1 ms-3">
+                                <div class="flex-grow-1 ms-3 stats-content">
                                     <h6 class="card-title text-muted mb-1">Upcoming Deliveries</h6>
                                     <h4 class="mb-0 text-secondary"><?= $upcoming_deliveries ?></h4>
                                 </div>
@@ -221,16 +510,16 @@ include 'includes/header.php';
                     </div>
                 </div>
 
-                <div class="col-xl-3 col-md-6">
-                    <div class="card border-0 shadow-sm h-100">
+                <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6">
+                    <div class="card dashboard-stats-card border-0 shadow-sm h-100">
                         <div class="card-body">
                             <div class="d-flex align-items-center">
                                 <div class="flex-shrink-0">
-                                    <div class="bg-dark bg-opacity-10 p-3 rounded">
-                                        <i class="bi bi-box text-dark fs-4"></i>
+                                    <div class="stats-icon bg-dark bg-opacity-10">
+                                        <i class="bi bi-box text-dark"></i>
                                     </div>
                                 </div>
-                                <div class="flex-grow-1 ms-3">
+                                <div class="flex-grow-1 ms-3 stats-content">
                                     <h6 class="card-title text-muted mb-1">Total Products</h6>
                                     <h4 class="mb-0 text-dark"><?= number_format($total_products) ?></h4>
                                 </div>
@@ -239,16 +528,16 @@ include 'includes/header.php';
                     </div>
                 </div>
 
-                <div class="col-xl-3 col-md-6">
-                    <div class="card border-0 shadow-sm h-100">
+                <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6">
+                    <div class="card dashboard-stats-card border-0 shadow-sm h-100">
                         <div class="card-body">
                             <div class="d-flex align-items-center">
                                 <div class="flex-shrink-0">
-                                    <div class="bg-success bg-opacity-10 p-3 rounded">
-                                        <i class="bi bi-calculator text-success fs-4"></i>
+                                    <div class="stats-icon bg-success bg-opacity-10">
+                                        <i class="bi bi-calculator text-success"></i>
                                     </div>
                                 </div>
-                                <div class="flex-grow-1 ms-3">
+                                <div class="flex-grow-1 ms-3 stats-content">
                                     <h6 class="card-title text-muted mb-1">Net Profit</h6>
                                     <h4 class="mb-0 text-success">PKR <?= number_format($total_sales - $total_purchases - $total_expenses, 2) ?></h4>
                                 </div>
@@ -267,13 +556,13 @@ include 'includes/header.php';
                                 <i class="bi bi-journal-text text-info me-2"></i>
                                 Today's Daily Books Summary
                             </h5>
-                            <a href="daily_books.php" class="btn btn-sm btn-outline-info">
+                            <a href="daily_books.php" class="btn btn-sm btn-outline-info d-none d-md-inline-block">
                                 <i class="bi bi-arrow-right me-1"></i>View Full Report
                             </a>
                         </div>
                         <div class="card-body">
-                            <div class="row g-3">
-                                <div class="col-md-3">
+                            <div class="row g-3 daily-books-summary">
+                                <div class="col-lg-3 col-md-6 col-sm-6">
                                     <div class="d-flex align-items-center p-3 bg-primary bg-opacity-10 rounded">
                                         <div class="flex-shrink-0">
                                             <i class="bi bi-cash-coin text-primary fs-4"></i>
@@ -284,7 +573,7 @@ include 'includes/header.php';
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-lg-3 col-md-6 col-sm-6">
                                     <div class="d-flex align-items-center p-3 bg-success bg-opacity-10 rounded">
                                         <div class="flex-shrink-0">
                                             <i class="bi bi-cart-plus text-success fs-4"></i>
@@ -295,7 +584,7 @@ include 'includes/header.php';
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-lg-3 col-md-6 col-sm-6">
                                     <div class="d-flex align-items-center p-3 bg-warning bg-opacity-10 rounded">
                                         <div class="flex-shrink-0">
                                             <i class="bi bi-receipt text-warning fs-4"></i>
@@ -306,7 +595,7 @@ include 'includes/header.php';
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-lg-3 col-md-6 col-sm-6">
                                     <div class="d-flex align-items-center p-3 bg-info bg-opacity-10 rounded">
                                         <div class="flex-shrink-0">
                                             <i class="bi bi-graph-up-arrow text-info fs-4"></i>
@@ -325,7 +614,7 @@ include 'includes/header.php';
 
             <div class="row g-4">
                 <!-- Sales Chart -->
-                <div class="col-xl-8">
+                <div class="col-xl-8 col-lg-7 col-md-12">
                     <div class="card border-0 shadow-sm">
                         <div class="card-header bg-transparent border-0">
                             <h5 class="card-title mb-0">
@@ -334,13 +623,15 @@ include 'includes/header.php';
                             </h5>
                         </div>
                         <div class="card-body">
-                            <canvas id="salesChart" height="100"></canvas>
+                            <div class="chart-container">
+                                <canvas id="salesChart"></canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Quick Actions -->
-                <div class="col-xl-4">
+                <div class="col-xl-4 col-lg-5 col-md-12">
                     <div class="card border-0 shadow-sm">
                         <div class="card-header bg-transparent border-0">
                             <h5 class="card-title mb-0">
@@ -349,7 +640,7 @@ include 'includes/header.php';
                             </h5>
                         </div>
                         <div class="card-body">
-                            <div class="d-grid gap-2">
+                            <div class="quick-actions-grid">
                                 <a href="add_sale.php" class="btn btn-primary">
                                     <i class="bi bi-plus-circle me-2"></i>New Sale
                                 </a>
@@ -376,7 +667,7 @@ include 'includes/header.php';
 
             <div class="row g-4 mt-2">
                 <!-- Recent Sales -->
-                <div class="col-xl-6">
+                <div class="col-xl-6 col-lg-6 col-md-12">
                     <div class="card border-0 shadow-sm">
                         <div class="card-header bg-transparent border-0">
                             <h5 class="card-title mb-0">
@@ -386,7 +677,7 @@ include 'includes/header.php';
                         </div>
                         <div class="card-body">
                             <?php if (!empty($recent_sales)): ?>
-                                <div class="table-responsive">
+                                <div class="table-responsive mobile-table">
                                     <table class="table table-sm">
                                         <thead>
                                             <tr>
@@ -420,7 +711,7 @@ include 'includes/header.php';
                 </div>
 
                 <!-- Low Stock Alerts -->
-                <div class="col-xl-6">
+                <div class="col-xl-6 col-lg-6 col-md-12">
                     <div class="card border-0 shadow-sm">
                         <div class="card-header bg-transparent border-0">
                             <h5 class="card-title mb-0">
@@ -430,7 +721,7 @@ include 'includes/header.php';
                         </div>
                         <div class="card-body">
                             <?php if (!empty($low_stock_products)): ?>
-                                <div class="table-responsive">
+                                <div class="table-responsive mobile-table">
                                     <table class="table table-sm">
                                         <thead>
                                             <tr>
@@ -472,8 +763,32 @@ include 'includes/header.php';
 <!-- Chart.js for sales chart -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+// Performance optimization: Debounce resize events
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Optimized chart initialization
+let salesChart = null;
+
 document.addEventListener('DOMContentLoaded', function() {
-    const ctx = document.getElementById('salesChart').getContext('2d');
+    // Use requestAnimationFrame to prevent forced reflow
+    requestAnimationFrame(function() {
+        initializeChart();
+    });
+});
+
+function initializeChart() {
+    const ctx = document.getElementById('salesChart');
+    if (!ctx) return;
     
     // Prepare data for chart
     const months = <?= json_encode(array_column($monthly_sales, 'month')) ?>;
@@ -485,7 +800,11 @@ document.addEventListener('DOMContentLoaded', function() {
         return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
     });
     
-    new Chart(ctx, {
+    // Get screen size once to avoid repeated DOM queries
+    const isMobile = window.innerWidth < 768;
+    
+    // Create chart with optimized options
+    salesChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: formattedMonths,
@@ -495,12 +814,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 borderColor: 'rgb(75, 192, 192)',
                 backgroundColor: 'rgba(75, 192, 192, 0.1)',
                 tension: 0.1,
-                fill: true
+                fill: true,
+                pointRadius: isMobile ? 3 : 4,
+                pointHoverRadius: isMobile ? 4 : 6
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: {
+                duration: 750,
+                easing: 'easeOutQuart'
+            },
             plugins: {
                 legend: {
                     display: false
@@ -515,9 +840,43 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     }
                 }
+            },
+            // Mobile chart optimization
+            interaction: {
+                mode: 'nearest',
+                axis: 'x',
+                intersect: false
+            },
+            elements: {
+                point: {
+                    radius: isMobile ? 3 : 4,
+                    hoverRadius: isMobile ? 4 : 6
+                }
             }
         }
     });
+}
+
+// Optimized resize handler with debouncing
+const debouncedResize = debounce(function() {
+    if (salesChart) {
+        // Use requestAnimationFrame to prevent forced reflow
+        requestAnimationFrame(function() {
+            salesChart.resize();
+        });
+    }
+}, 150);
+
+// Add resize listener only once
+window.addEventListener('resize', debouncedResize, { passive: true });
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', function() {
+    if (salesChart) {
+        salesChart.destroy();
+        salesChart = null;
+    }
+    window.removeEventListener('resize', debouncedResize);
 });
 </script>
 

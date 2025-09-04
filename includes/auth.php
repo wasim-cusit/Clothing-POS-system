@@ -39,24 +39,21 @@ function current_user() {
 }
 
 function has_role($role_name) {
-    global $pdo;
-    if (!isset($_SESSION['role_id'])) {
+    if (!is_logged_in()) {
         return false;
     }
     
-    try {
-        $stmt = $pdo->prepare('SELECT role_name FROM roles WHERE id = ?');
-        $stmt->execute([$_SESSION['role_id']]);
-        $role = $stmt->fetchColumn();
-        
-        // Debug: Log the role check
-        error_log("User ID: " . $_SESSION['user_id'] . ", Role ID: " . $_SESSION['role_id'] . ", Found Role: " . $role . ", Checking for: " . $role_name);
-        
-        return $role === $role_name;
-    } catch (Exception $e) {
-        error_log("Role check error: " . $e->getMessage());
-        return false;
+    // Simple role check based on role_id in session
+    // Assuming: 1 = admin, 2 = user
+    $role_id = $_SESSION['role_id'] ?? 2;
+    
+    if ($role_name === 'admin' && $role_id == 1) {
+        return true;
+    } elseif ($role_name === 'user' && $role_id == 2) {
+        return true;
     }
+    
+    return false;
 }
 
 function redirect_if_logged_in() {

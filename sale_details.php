@@ -170,6 +170,16 @@ include 'includes/header.php';
                                         <?php endif; ?>
                                     </td>
                                 </tr>
+                                <tr>
+                                    <td><strong>Reference Persons:</strong></td>
+                                    <td>
+                                        <?php if ($sale['reference_persons']): ?>
+                                            <i class="bi bi-people"></i> <?= htmlspecialchars($sale['reference_persons']) ?>
+                                        <?php else: ?>
+                                            <span class="text-muted">-</span>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
                             </table>
                         </div>
                     </div>

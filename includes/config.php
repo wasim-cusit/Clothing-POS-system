@@ -1,8 +1,13 @@
 <?php
 // Auto-detect base URL
 function getBaseUrl() {
+    // Check if running from command line
+    if (php_sapi_name() === 'cli') {
+        return 'http://localhost/tailor/';
+    }
+    
     $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-    $host = $_SERVER['HTTP_HOST'];
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
     $script_name = $_SERVER['SCRIPT_NAME'];
     $path_info = pathinfo($script_name);
     $base_path = $path_info['dirname'];

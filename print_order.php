@@ -3,7 +3,7 @@ require_once 'includes/auth.php';
 require_login();
 require_once 'includes/config.php';
 
-$activePage = 'orders';
+$activePage = 'order';
 
 // Get order ID from URL
 $order_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
@@ -16,7 +16,7 @@ try {
     // Fetch order details
     $stmt = $pdo->prepare("
         SELECT o.*, c.name AS customer_name, c.mobile, c.address, c.email
-        FROM cloths_orders o 
+        FROM orders o 
         LEFT JOIN customer c ON o.customer_id = c.id 
         WHERE o.id = ?
     ");
@@ -50,232 +50,317 @@ $page_title = "Order #" . ($order['order_no'] ?? 'ORD-' . str_pad($order['id'], 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($page_title) ?> - Print</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <title><?= htmlspecialchars($page_title) ?> - Invoice</title>
     <style>
         @media print {
             .no-print { display: none !important; }
-            body { margin: 0; padding: 20px; }
-            .container { max-width: 100% !important; }
+            body { 
+                margin: 0; 
+                padding: 0; 
+                font-size: 11px; 
+                background: white !important;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+            .invoice-container { 
+                max-width: 100% !important; 
+                border: 2px solid #000 !important;
+                box-shadow: none !important;
+                margin: 5px !important;
+                padding: 15px !important;
+            }
+            .header {
+                border-bottom: 2px dashed #000 !important;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+            .footer {
+                border-top: 2px dashed #000 !important;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+            .order-info {
+                border-bottom: 1px dashed #000 !important;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+            .customer-info {
+                border-bottom: 1px dashed #000 !important;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+            .item-header {
+                border-bottom: 1px solid #000 !important;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+            .item-row {
+                border-bottom: 1px dotted #ccc !important;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+            .totals {
+                border-top: 2px solid #000 !important;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+            .total-final {
+                border-top: 1px solid #000 !important;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+            .status-badge {
+                border: 1px solid #000 !important;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+            * {
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
         }
         
-        .print-header {
-            border-bottom: 2px solid #333;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
+        body {
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 20px;
+            background: #fff;
+            font-size: 14px;
+            line-height: 1.4;
         }
         
-        .company-info {
+        .invoice-container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border: 2px solid #000;
+            padding: 20px;
+        }
+        
+        .header {
             text-align: center;
+            border-bottom: 2px dashed #000;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
         }
         
         .company-name {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: bold;
-            color: #333;
             margin-bottom: 5px;
         }
         
-        .company-tagline {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 10px;
+        .company-info {
+            font-size: 12px;
+            margin-bottom: 3px;
         }
         
-        .order-details {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 30px;
+        .invoice-title {
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            margin: 15px 0;
+            text-decoration: underline;
+        }
+        
+        .order-info {
+            margin-bottom: 15px;
+            border-bottom: 1px dashed #000;
+            padding-bottom: 10px;
         }
         
         .customer-info {
-            background: #fff;
-            padding: 20px;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            margin-bottom: 30px;
+            margin-bottom: 15px;
+            border-bottom: 1px dashed #000;
+            padding-bottom: 10px;
         }
         
-        .items-table {
-            margin-bottom: 30px;
+        .items-section {
+            margin-bottom: 15px;
         }
         
-        .items-table th {
-            background: #f8f9fa;
-            font-weight: 600;
+        .item-header {
+            border-bottom: 1px solid #000;
+            font-weight: bold;
+            padding: 5px 0;
+            display: flex;
+            justify-content: space-between;
         }
         
-        .total-section {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 30px;
+        .item-row {
+            padding: 3px 0;
+            border-bottom: 1px dotted #ccc;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .item-desc {
+            flex: 1;
+            padding-right: 10px;
+        }
+        
+        .item-qty {
+            width: 40px;
+            text-align: center;
+        }
+        
+        .item-price {
+            width: 80px;
+            text-align: right;
+        }
+        
+        .totals {
+            border-top: 2px solid #000;
+            padding-top: 10px;
+            margin-top: 10px;
+        }
+        
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        
+        .total-final {
+            font-weight: bold;
+            font-size: 16px;
+            border-top: 1px solid #000;
+            padding-top: 5px;
+            margin-top: 5px;
         }
         
         .footer {
-            margin-top: 50px;
-            padding-top: 20px;
-            border-top: 1px solid #dee2e6;
             text-align: center;
-            color: #666;
+            margin-top: 20px;
+            border-top: 2px dashed #000;
+            padding-top: 15px;
+            font-size: 12px;
         }
         
         .status-badge {
-            font-size: 14px;
-            padding: 8px 16px;
+            display: inline-block;
+            padding: 3px 8px;
+            border: 1px solid #000;
+            margin: 5px 0;
         }
+        
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .bold { font-weight: bold; }
+        .small { font-size: 11px; }
     </style>
 </head>
 <body>
-    <div class="container-fluid">
-        <!-- Print Header -->
-        <div class="print-header">
-            <div class="company-info">
-                <div class="company-name">TAILOR SHOP</div>
-                <div class="company-tagline">Professional Tailoring Services</div>
-                <div class="company-tagline">Quality Stitching & Design</div>
-            </div>
+    <div class="invoice-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="company-name">WASIM</div>
+            <div class="company-info">Professional Tailoring Services</div>
+            <div class="company-info">Address shop #1 hameed plaza</div>
+            <div class="company-info">main university road Pakistan</div>
+            <div class="company-info">Phone: +92 323 9507813</div>
+            <div class="company-info">Email: info@tailorshop.com</div>
         </div>
         
-        <!-- Order Details -->
-        <div class="order-details">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5><strong>Order Information</strong></h5>
-                    <p><strong>Order No:</strong> <?= htmlspecialchars($order['order_no'] ?? 'ORD-' . str_pad($order['id'], 3, '0', STR_PAD_LEFT)) ?></p>
-                    <p><strong>Order Date:</strong> <?= htmlspecialchars(date('d/m/Y', strtotime($order['order_date']))) ?></p>
-                    <p><strong>Delivery Date:</strong> <?= $order['delivery_date'] ? htmlspecialchars(date('d/m/Y', strtotime($order['delivery_date']))) : 'Not set' ?></p>
-                </div>
-                <div class="col-md-6 text-md-end">
-                    <h5><strong>Order Status</strong></h5>
-                    <?php
-                    $status_colors = [
-                        'Pending' => 'warning',
-                        'Confirmed' => 'info',
-                        'In Progress' => 'primary',
-                        'Completed' => 'success',
-                        'Cancelled' => 'danger'
-                    ];
-                    $status_icons = [
-                        'Pending' => '⏳',
-                        'Confirmed' => '✅',
-                        'In Progress' => '🔄',
-                        'Completed' => '🎉',
-                        'Cancelled' => '❌'
-                    ];
-                    $color = $status_colors[$order['status']] ?? 'secondary';
-                    $icon = $status_icons[$order['status']] ?? '❓';
-                    ?>
-                    <span class="badge bg-<?= $color ?> status-badge">
-                        <?= $icon ?> <?= htmlspecialchars($order['status'] ?? 'Pending') ?>
-                    </span>
-                </div>
+        <div class="invoice-title">INVOICE</div>
+        
+        <!-- Order Information -->
+        <div class="order-info">
+            <div><strong>Invoice No:</strong> <?= 'Invo-' . str_pad($order['id'], 2, '0', STR_PAD_LEFT) ?></div>
+            <div><strong>Date:</strong> <?= htmlspecialchars(date('d/m/Y', strtotime($order['order_date']))) ?></div>
+            <div><strong>Time:</strong> <?= date('H:i:s', strtotime($order['order_date'])) ?></div>
+            <?php if ($order['delivery_date'] && $order['delivery_date'] != '0000-00-00' && $order['delivery_date'] != '0000-00-00 00:00:00'): ?>
+            <div><strong>Delivery:</strong> <?= htmlspecialchars(date('d/m/Y', strtotime($order['delivery_date']))) ?></div>
+            <?php else: ?>
+            <div><strong>Delivery:</strong> N/A</div>
+            <?php endif; ?>
+            <div class="text-center">
+                <span class="status-badge"><?= htmlspecialchars($order['status'] ?? 'Pending') ?></span>
             </div>
         </div>
         
         <!-- Customer Information -->
         <div class="customer-info">
-            <h5><strong>Customer Information</strong></h5>
-            <div class="row">
-                <div class="col-md-6">
-                    <p><strong>Name:</strong> <?= htmlspecialchars($order['customer_name'] ?? 'Walk-in Customer') ?></p>
-                    <?php if ($order['mobile']): ?>
-                        <p><strong>Mobile:</strong> <?= htmlspecialchars($order['mobile']) ?></p>
-                    <?php endif; ?>
-                </div>
-                <div class="col-md-6">
-                    <?php if ($order['address']): ?>
-                        <p><strong>Address:</strong> <?= htmlspecialchars($order['address']) ?></p>
-                    <?php endif; ?>
-                    <?php if ($order['email']): ?>
-                        <p><strong>Email:</strong> <?= htmlspecialchars($order['email']) ?></p>
-                    <?php endif; ?>
-                </div>
-            </div>
+            <div class="bold">CUSTOMER DETAILS:</div>
+            <div><strong>Name:</strong> <?= htmlspecialchars($order['customer_name'] ?? 'Walk-in Customer') ?></div>
+            <?php if ($order['mobile']): ?>
+            <div><strong>Mobile:</strong> <?= htmlspecialchars($order['mobile']) ?></div>
+            <?php endif; ?>
+            <?php if ($order['address']): ?>
+            <div><strong>Address:</strong> <?= htmlspecialchars($order['address']) ?></div>
+            <?php endif; ?>
         </div>
         
         <!-- Order Items -->
-        <div class="items-table">
-            <h5><strong>Order Items</strong></h5>
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Description</th>
-                        <th>Unit</th>
-                        <th>Quantity</th>
-                        <th>Unit Price</th>
-                        <th>Total Price</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (!empty($order_items)): ?>
-                        <?php foreach ($order_items as $index => $item): ?>
-                            <tr>
-                                <td><?= $index + 1 ?></td>
-                                <td><?= htmlspecialchars($item['description'] ?? 'N/A') ?></td>
-                                <td><?= htmlspecialchars($item['product_unit'] ?? 'N/A') ?></td>
-                                <td><?= htmlspecialchars($item['quantity']) ?></td>
-                                <td>PKR <?= number_format($item['unit_price'], 2) ?></td>
-                                <td>PKR <?= number_format($item['total_price'], 2) ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <tr>
-                            <td colspan="6" class="text-center">No items found</td>
-                        </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-        
-        <!-- Pricing Summary -->
-        <div class="total-section">
-            <div class="row">
-                <div class="col-md-6 offset-md-6">
-                    <table class="table table-borderless">
-                        <tr>
-                            <td><strong>Sub Total:</strong></td>
-                            <td class="text-end">PKR <?= number_format($order['sub_total'], 2) ?></td>
-                        </tr>
-                        <?php if ($order['discount'] > 0): ?>
-                            <tr>
-                                <td><strong>Discount:</strong></td>
-                                <td class="text-end">PKR <?= number_format($order['discount'], 2) ?></td>
-                            </tr>
-                        <?php endif; ?>
-                        <tr class="border-top">
-                            <td><strong>Total Amount:</strong></td>
-                            <td class="text-end"><strong>PKR <?= number_format($order['total_amount'], 2) ?></strong></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Paid Amount:</strong></td>
-                            <td class="text-end">PKR <?= number_format($order['paid_amount'], 2) ?></td>
-                        </tr>
-                        <tr class="border-top">
-                            <td><strong>Remaining Amount:</strong></td>
-                            <td class="text-end"><strong>PKR <?= number_format($order['remaining_amount'], 2) ?></strong></td>
-                        </tr>
-                    </table>
+        <div class="items-section">
+            <div class="bold">ORDER ITEMS:</div>
+            <div class="item-header">
+                <span style="flex: 1;">ITEM</span>
+                <span style="width: 40px; text-align: center;">QTY</span>
+                <span style="width: 80px; text-align: right;">AMOUNT</span>
+            </div>
+            <?php if (!empty($order_items)): ?>
+                <?php foreach ($order_items as $item): ?>
+                <div class="item-row">
+                    <div class="item-desc">
+                        <?= htmlspecialchars($item['description'] ?? 'Service') ?>
+                        <div class="small">@ PKR <?= number_format($item['unit_price'], 2) ?> each</div>
+                    </div>
+                    <div class="item-qty"><?= $item['quantity'] ?></div>
+                    <div class="item-price">PKR <?= number_format($item['total_price'], 2) ?></div>
                 </div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <div class="item-row">
+                    <div class="item-desc">No items found</div>
+                    <div class="item-qty">-</div>
+                    <div class="item-price">PKR 0.00</div>
+                </div>
+            <?php endif; ?>
+        </div>
+        
+        <!-- Totals -->
+        <div class="totals">
+            <div class="total-row">
+                <span>Subtotal:</span>
+                <span>PKR <?= number_format($order['sub_total'], 2) ?></span>
+            </div>
+            <?php if ($order['discount'] > 0): ?>
+            <div class="total-row">
+                <span>Discount:</span>
+                <span>-PKR <?= number_format($order['discount'], 2) ?></span>
+            </div>
+            <?php endif; ?>
+            <div class="total-row total-final">
+                <span>TOTAL:</span>
+                <span>PKR <?= number_format($order['total_amount'], 2) ?></span>
+            </div>
+            <div class="total-row">
+                <span>Paid:</span>
+                <span>PKR <?= number_format($order['paid_amount'], 2) ?></span>
+            </div>
+            <div class="total-row bold">
+                <span>Balance Due:</span>
+                <span>PKR <?= number_format($order['remaining_amount'], 2) ?></span>
             </div>
         </div>
         
-        <!-- Order Details/Notes -->
         <?php if ($order['details']): ?>
-            <div class="customer-info">
-                <h5><strong>Order Details/Notes</strong></h5>
-                <p><?= nl2br(htmlspecialchars($order['details'])) ?></p>
-            </div>
+        <!-- Notes -->
+        <div style="margin: 15px 0; padding: 10px 0; border-top: 1px dashed #000;">
+            <div class="bold">NOTES:</div>
+            <div class="small"><?= nl2br(htmlspecialchars($order['details'])) ?></div>
+        </div>
         <?php endif; ?>
         
         <!-- Footer -->
         <div class="footer">
-            <p><strong>Thank you for choosing our services!</strong></p>
-            <p>For any queries, please contact us</p>
-            <p>Generated on: <?= date('d/m/Y H:i:s') ?></p>
+            <div class="bold">Thank you for your business!</div>
+            <div class="small">Visit us again for quality tailoring services</div>
+            <div class="small">Generated: <?= date('d/m/Y H:i') ?></div>
+            <div style="margin-top: 10px; border-top: 1px solid #000; padding-top: 5px;">
+                <div class="small">** KEEP THIS RECEIPT SAFE **</div>
+            </div>
         </div>
     </div>
     

@@ -6,32 +6,11 @@ require_login();
 // Highlighting for Add Unit page
 $activePage = 'add_unit';
 
-// Helper: fetch current ENUM values for products.unit
-function get_current_unit_enum_values(PDO $pdo, string $databaseName): array {
-    $stmt = $pdo->prepare("SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'products' AND COLUMN_NAME = 'unit'");
-    $stmt->execute([$databaseName]);
-    $columnType = $stmt->fetchColumn();
-    if (!$columnType) {
-        return [];
-    }
-    // Parse enum('a','b','c')
-    $matches = [];
-    preg_match_all("/'((?:[^'\\\\]|\\\\.)*)'/", $columnType, $matches);
-    if (!isset($matches[1])) return [];
-    // Unescape values
-    return array_map(function ($v) {
-        return str_replace(["\\'", '\\"', '\\\\'], ["'", '"', '\\'], $v);
-    }, $matches[1]);
-}
-
-// Helper: rebuild ENUM DDL string from values
-function build_enum_ddl(array $values): string {
-    $quoted = array_map(function ($v) {
-        // Escape single quotes for SQL literal
-        $escaped = str_replace("'", "\\'", $v);
-        return "'{$escaped}'";
-    }, $values);
-    return 'ENUM(' . implode(',', $quoted) . ') NOT NULL';
+// Helper: fetch current unit values from products.product_unit
+function get_current_unit_values(PDO $pdo): array {
+    $stmt = $pdo->prepare("SELECT DISTINCT product_unit FROM products WHERE product_unit IS NOT NULL AND product_unit != '' ORDER BY product_unit");
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_COLUMN);
 }
 
 $error = null;
@@ -44,9 +23,21 @@ function ensure_unit_prices_table(PDO $pdo): void {
             id INT AUTO_INCREMENT PRIMARY KEY,
             unit_name VARCHAR(100) NOT NULL UNIQUE,
             unit_price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+            karegar_price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+            material_price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+            zakat_percentage DECIMAL(5,2) NOT NULL DEFAULT 0.00,
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci"
     );
+    
+    // Add new columns if they don't exist
+    try {
+        $pdo->exec("ALTER TABLE unit_prices ADD COLUMN IF NOT EXISTS karegar_price DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER unit_price");
+        $pdo->exec("ALTER TABLE unit_prices ADD COLUMN IF NOT EXISTS material_price DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER karegar_price");
+        $pdo->exec("ALTER TABLE unit_prices ADD COLUMN IF NOT EXISTS zakat_percentage DECIMAL(5,2) NOT NULL DEFAULT 0.00 AFTER material_price");
+    } catch (Exception $e) {
+        // Columns might already exist, ignore error
+    }
 }
 
 $error = null;
@@ -62,36 +53,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_unit'])) {
         if (!preg_match('/^[A-Za-z0-9 _-]{1,50}$/', $newUnit)) {
             $error = 'Invalid unit name. Use letters, numbers, spaces, hyphen, underscore (max 50 chars).';
         } else {
-            // Validate price
+            // Validate prices
             $priceRaw = trim($_POST['unit_price'] ?? '');
+            $karegarPriceRaw = trim($_POST['karegar_price'] ?? '');
+            $materialPriceRaw = trim($_POST['material_price'] ?? '');
+            $zakatPercentageRaw = trim($_POST['zakat_percentage'] ?? '');
+            
             if ($priceRaw === '' || !is_numeric($priceRaw) || (float)$priceRaw < 0) {
                 $error = 'Please enter a valid non-negative Unit Price.';
+            } elseif ($karegarPriceRaw === '' || !is_numeric($karegarPriceRaw) || (float)$karegarPriceRaw < 0) {
+                $error = 'Please enter a valid non-negative Karegar Price.';
+            } elseif ($materialPriceRaw === '' || !is_numeric($materialPriceRaw) || (float)$materialPriceRaw < 0) {
+                $error = 'Please enter a valid non-negative Material Price.';
+            } elseif ($zakatPercentageRaw === '' || !is_numeric($zakatPercentageRaw) || (float)$zakatPercentageRaw < 0 || (float)$zakatPercentageRaw > 100) {
+                $error = 'Please enter a valid Zakat percentage between 0 and 100.';
             }
         }
 
         if ($error === null) {
-            $currentUnits = get_current_unit_enum_values($pdo, $db);
+            $currentUnits = get_current_unit_values($pdo);
             // Prevent duplicates (case-insensitive)
             $lowerSet = array_map('mb_strtolower', $currentUnits);
             if (in_array(mb_strtolower($newUnit), $lowerSet, true)) {
                 $error = 'This unit already exists.';
             } else {
-                // Append and ALTER TABLE
-                $updatedUnits = $currentUnits;
-                $updatedUnits[] = $newUnit;
-                $ddl = build_enum_ddl($updatedUnits);
-                $sql = "ALTER TABLE products MODIFY unit {$ddl}";
-                try {
-                    $pdo->exec($sql);
-                    // Store price
-                    ensure_unit_prices_table($pdo);
-                    $stmt = $pdo->prepare("INSERT INTO unit_prices (unit_name, unit_price) VALUES (?, ?)");
-                    $stmt->execute([$newUnit, number_format((float)$priceRaw, 2, '.', '')]);
-                    header('Location: add_unit.php?success=added');
-                    exit;
-                } catch (Throwable $t) {
-                    $error = 'Failed to add unit: ' . $t->getMessage();
-                }
+                // Store prices
+                ensure_unit_prices_table($pdo);
+                $stmt = $pdo->prepare("INSERT INTO unit_prices (unit_name, unit_price, karegar_price, material_price, zakat_percentage) VALUES (?, ?, ?, ?, ?)");
+                $stmt->execute([
+                    $newUnit, 
+                    number_format((float)$priceRaw, 2, '.', ''),
+                    number_format((float)$karegarPriceRaw, 2, '.', ''),
+                    number_format((float)$materialPriceRaw, 2, '.', ''),
+                    number_format((float)$zakatPercentageRaw, 2, '.', '')
+                ]);
+                header('Location: add_unit.php?success=added');
+                exit;
             }
         }
     }
@@ -103,11 +100,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_price'])) {
         ensure_unit_prices_table($pdo);
         $id = (int)($_POST['id'] ?? 0);
         $priceRaw = trim($_POST['unit_price'] ?? '');
-        if ($id <= 0 || $priceRaw === '' || !is_numeric($priceRaw) || (float)$priceRaw < 0) {
+        $karegarPriceRaw = trim($_POST['karegar_price'] ?? '');
+        $materialPriceRaw = trim($_POST['material_price'] ?? '');
+        $zakatPercentageRaw = trim($_POST['zakat_percentage'] ?? '');
+        
+        if ($id <= 0 || $priceRaw === '' || !is_numeric($priceRaw) || (float)$priceRaw < 0 ||
+            $karegarPriceRaw === '' || !is_numeric($karegarPriceRaw) || (float)$karegarPriceRaw < 0 ||
+            $materialPriceRaw === '' || !is_numeric($materialPriceRaw) || (float)$materialPriceRaw < 0 ||
+            $zakatPercentageRaw === '' || !is_numeric($zakatPercentageRaw) || (float)$zakatPercentageRaw < 0 || (float)$zakatPercentageRaw > 100) {
             $error = 'Invalid data provided for update.';
         } else {
-            $stmt = $pdo->prepare('UPDATE unit_prices SET unit_price = ? WHERE id = ?');
-            $stmt->execute([number_format((float)$priceRaw, 2, '.', ''), $id]);
+            $stmt = $pdo->prepare('UPDATE unit_prices SET unit_price = ?, karegar_price = ?, material_price = ?, zakat_percentage = ? WHERE id = ?');
+            $stmt->execute([
+                number_format((float)$priceRaw, 2, '.', ''),
+                number_format((float)$karegarPriceRaw, 2, '.', ''),
+                number_format((float)$materialPriceRaw, 2, '.', ''),
+                number_format((float)$zakatPercentageRaw, 2, '.', ''),
+                $id
+            ]);
             header('Location: add_unit.php?success=updated');
             exit;
         }
@@ -126,28 +136,17 @@ if (isset($_GET['delete'])) {
         $unitName = $stmt->fetchColumn();
         if ($unitName) {
             // Check usage in products
-            $cstmt = $pdo->prepare('SELECT COUNT(*) FROM products WHERE unit = ?');
+            $cstmt = $pdo->prepare('SELECT COUNT(*) FROM products WHERE product_unit = ?');
             $cstmt->execute([$unitName]);
             $inUse = (int)$cstmt->fetchColumn();
             if ($inUse > 0) {
                 $error = "Cannot delete. Unit is used by {$inUse} product(s).";
             } else {
-                // Remove from enum, then delete row
-                $currentUnits = get_current_unit_enum_values($pdo, $db);
-                $filtered = array_values(array_filter($currentUnits, function ($u) use ($unitName) { return mb_strtolower($u) !== mb_strtolower($unitName); }));
-                $ddl = build_enum_ddl($filtered);
-                $pdo->beginTransaction();
-                try {
-                    $pdo->exec("ALTER TABLE products MODIFY unit {$ddl}");
-                    $dstmt = $pdo->prepare('DELETE FROM unit_prices WHERE id = ?');
-                    $dstmt->execute([$id]);
-                    $pdo->commit();
-                    header('Location: add_unit.php?success=deleted');
-                    exit;
-                } catch (Throwable $th) {
-                    $pdo->rollBack();
-                    $error = 'Failed to delete unit: ' . $th->getMessage();
-                }
+                // Delete row from unit_prices
+                $dstmt = $pdo->prepare('DELETE FROM unit_prices WHERE id = ?');
+                $dstmt->execute([$id]);
+                header('Location: add_unit.php?success=deleted');
+                exit;
             }
         }
     } catch (Throwable $t) {
@@ -156,12 +155,18 @@ if (isset($_GET['delete'])) {
 }
 
 // Read current units for display
-$units = get_current_unit_enum_values($pdo, $db);
+$units = get_current_unit_values($pdo);
 // Map prices
 try {
     ensure_unit_prices_table($pdo);
+    
+    // Update existing records to have default values for new fields
+    $pdo->exec("UPDATE unit_prices SET karegar_price = 0.00 WHERE karegar_price IS NULL");
+    $pdo->exec("UPDATE unit_prices SET material_price = 0.00 WHERE material_price IS NULL");
+    $pdo->exec("UPDATE unit_prices SET zakat_percentage = 0.00 WHERE zakat_percentage IS NULL");
+    
     $priceRows = $pdo->query("SELECT unit_name, unit_price FROM unit_prices")->fetchAll(PDO::FETCH_KEY_PAIR);
-    $unitRows = $pdo->query("SELECT id, unit_name, unit_price FROM unit_prices ORDER BY unit_name")->fetchAll(PDO::FETCH_ASSOC);
+    $unitRows = $pdo->query("SELECT id, unit_name, unit_price, karegar_price, material_price, zakat_percentage FROM unit_prices ORDER BY unit_name")->fetchAll(PDO::FETCH_ASSOC);
     $usageRows = $pdo->query("SELECT unit, COUNT(*) AS cnt FROM products GROUP BY unit")->fetchAll(PDO::FETCH_KEY_PAIR);
 } catch (Throwable $t) {
     $priceRows = [];
@@ -174,7 +179,7 @@ $edit_unit = null;
 if (isset($_GET['edit'])) {
     $id = (int)$_GET['edit'];
     try {
-        $stmt = $pdo->prepare('SELECT id, unit_name, unit_price FROM unit_prices WHERE id = ?');
+        $stmt = $pdo->prepare('SELECT id, unit_name, unit_price, karegar_price, material_price, zakat_percentage FROM unit_prices WHERE id = ?');
         $stmt->execute([$id]);
         $edit_unit = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     } catch (Throwable $t) {
@@ -217,6 +222,19 @@ include __DIR__ . '/includes/header.php';
                         <div class="mb-3">
                             <label class="form-label">Unit Price</label>
                             <input type="number" step="0.01" min="0" name="unit_price" class="form-control" placeholder="Enter Unit Price" value="<?= $edit_unit ? htmlspecialchars($edit_unit['unit_price']) : '' ?>" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Karegar (Tailor)</label>
+                            <input type="number" step="0.01" min="0" name="karegar_price" class="form-control" placeholder="Enter Karegar Price" value="<?= $edit_unit ? htmlspecialchars($edit_unit['karegar_price'] ?? '') : '' ?>" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Material</label>
+                            <input type="number" step="0.01" min="0" name="material_price" class="form-control" placeholder="Enter Material Price" value="<?= $edit_unit ? htmlspecialchars($edit_unit['material_price'] ?? '') : '' ?>" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Zakat (%)</label>
+                            <input type="number" step="0.01" min="0" max="100" name="zakat_percentage" class="form-control" placeholder="Enter Zakat Percentage" value="<?= $edit_unit ? htmlspecialchars($edit_unit['zakat_percentage'] ?? '') : '' ?>" required>
+                            <small class="form-text text-muted">Percentage to be deducted from total unit cost</small>
                         </div>
                         <?php if ($edit_unit): ?>
                             <button type="submit" name="update_price" class="btn btn-primary">Update</button>

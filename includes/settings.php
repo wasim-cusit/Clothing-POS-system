@@ -153,7 +153,7 @@ function create_settings_table() {
             
             if ($count == 0) {
                 $default_settings = [
-                    ['company_name', 'WASEM WEARS', 'Company/Business Name'],
+                    ['company_name', 'WASIM', 'Company/Business Name'],
                     ['company_tagline', 'Professional Tailoring Services', 'Company Tagline or Description'],
                     ['company_phone', '+92 323 9507813', 'Company Phone Number'],
                     ['company_email', 'info@tailorshop.com', 'Company Email Address'],
@@ -306,7 +306,7 @@ function get_settings_by_group($group) {
  */
 function get_company_info() {
     return [
-        'name' => get_setting('company_name', 'WASEM WEARS'),
+        'name' => get_setting('company_name', 'WASIM'),
         'tagline' => get_setting('company_tagline', 'Professional Tailoring Services'),
         'phone' => get_setting('company_phone', '+92 323 9507813'),
         'email' => get_setting('company_email', 'info@tailorshop.com'),

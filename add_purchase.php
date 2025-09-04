@@ -42,9 +42,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_purchase'])) {
         $unit_prices = $_POST['unit_price'];
         $total_prices = $_POST['total_price'];
         
-        // Debug: Log color data
-
-
         for ($i = 0; $i < count($product_ids); $i++) {
             if (!empty($product_ids[$i])) {
                 // Get product details for product_code
@@ -62,9 +59,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_purchase'])) {
                     // If a predefined color is selected
                     $color = $colors[$i];
                 }
-                
-                // Debug: Log color/names being inserted
-    
                 
                 $stmt = $pdo->prepare("INSERT INTO purchase_items (purchase_id, product_id, product_code, color, purchase_price, sale_price, quantity, purchase_total) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
                 $stmt->execute([$purchase_id, $product_ids[$i], $product_code, $color, $unit_prices[$i], $unit_prices[$i], $quantities[$i], $total_prices[$i]]);

@@ -30,9 +30,6 @@ include 'includes/header.php';
         <main class="col-md-10 ms-sm-auto px-4 py-5" style="margin-top: 25px;">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="mb-0"><i class="bi bi-box-seam text-primary"></i> Product Details</h2>
-                <!-- <a href="add_product.php" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Add New Product
-                </a> -->
             </div>
 
             <?php if (isset($_GET['success'])): ?>
